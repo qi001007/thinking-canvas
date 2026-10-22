@@ -15,8 +15,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Core tests
-        run: node --test tests/core.test.mjs
+      - name: Front-end tests
+        run: node --test tests/core.test.mjs tests/panes.test.mjs
 
       - uses: actions/setup-python@v5
         with:
