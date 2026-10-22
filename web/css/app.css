@@ -892,7 +892,7 @@ body.pane-dragging .workspace * {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 6px 14px;
   min-width: 0;
   z-index: 6;
 }
@@ -939,7 +939,7 @@ body.pane-dragging .workspace * {
   gap: 7px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 3px 2px 5px;
+  padding: 1px 2px 3px;
   scrollbar-width: thin;
 }
 
@@ -948,7 +948,7 @@ body.pane-dragging .workspace * {
   display: flex;
   align-items: center;
   gap: 7px;
-  height: 34px;
+  height: 32px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--surface-soft);

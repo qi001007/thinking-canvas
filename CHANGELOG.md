@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3 · 2026-10-23
+
+- Reduce the timeline bar from 62px to 48px and step chips to 32px for a lighter footer.
+- Remove local scratch/browser profiles and build intermediates from the workspace; no board data is touched.
+
 ## 0.3.2 · 2026-10-22
 
 - Batch array input now uses code-like lists: `[1, 2, 3]` and `[[1, 2], [3, 4]]`, with live row/column preview and Excel TSV paste support.

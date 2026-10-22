@@ -1,10 +1,6 @@
 # app 变更记录
 
-- 2026-10-22：建立 pywebview 桌面壳、原生文件 API、会话自动保存与最近文件；提供 `--smoke` 验收入口。
-- 2026-10-22：smoke 改为前端回调 Python、结果落 `smoke.json`，避免 windowed 进程无 stdout；补 WebView2 临时 storage 解决正常启动 API 不挂载。
-- 2026-10-22：加入 app 图标、windowed 正常启动验证；构建脚本见 `scripts/build_exe.py`。
-- 2026-10-22：v0.1.1：fit 不放大超过 100%；版本号更新；窗口版 smoke 与正常窗口复验。
-- 2026-10-22：画板统一到应用旁 `boards/`；新增画板 API、`.trash` 删除、旧 session 迁移；版本 0.2.0。
-- 2026-10-22：新增 `boards/.ui-state.json` 与 `load_ui_state`/`save_ui_state`；版本 0.3.0；smoke 覆盖分栏与 UI 状态往返。
-- 2026-10-22：v0.3.1：`ensure_sample_board` 固定示例文件、`sample` 标记、示例防删；smoke 补示例稳定性。
-- 2026-10-22：v0.3.2：smoke 看门狗 25→40 秒，容纳单文件 exe 启动波动。
+- 桌面壳只负责窗口、文件 API、画板/UI 状态和原子写入，不掺画布逻辑。
+- 画板与 `.ui-state.json` 都放在应用旁 `boards/`；所有路径限制在目录内；删除进 `.trash`。
+- 示例固定为 `board-sample.tcanvas.json`，只在缺失时创建、不可删除。
+- smoke 看门狗 40 秒；本机 WebView2 窗口被遮挡时用 `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--disable-gpu` 复测。
