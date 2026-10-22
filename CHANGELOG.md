@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4 · 2026-10-23
+
+- Wait up to 15 seconds for pywebview API injection instead of failing at 6 seconds.
+- Add a retry button and a close-other-windows hint to the boot error screen.
+
 ## 0.3.3 · 2026-10-23
 
 - Reduce the timeline bar from 62px to 48px and step chips to 32px for a lighter footer.

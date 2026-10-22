@@ -27,9 +27,9 @@ export async function createBridge() {
   const inWebView = Boolean(window.chrome?.webview);
   const desktopHint = inWebView || new URLSearchParams(location.search).get("desktop") === "1";
   if (desktopHint) {
-    const ready = await waitForApi(inWebView ? 6000 : 1800);
+    const ready = await waitForApi(inWebView ? 15000 : 1800);
     if (ready) return new DesktopBridge();
-    if (inWebView) throw new Error("桌面桥接未就绪：pywebview API 在 6 秒内没有挂上。");
+    if (inWebView) throw new Error("桌面桥接未就绪：pywebview API 在 15 秒内没有挂上。");
   }
   return new BrowserBridge();
 }

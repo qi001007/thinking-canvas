@@ -122,7 +122,19 @@ async function boot() {
     console.error(error);
     const node = document.getElementById("boot-error");
     node.hidden = false;
-    node.textContent = `Thinking Canvas 启动失败\n\n${error.stack || error.message || error}`;
+    node.replaceChildren();
+    const title = document.createElement("strong");
+    title.textContent = "Thinking Canvas 启动失败";
+    const detail = document.createElement("pre");
+    detail.textContent = error.stack || error.message || String(error);
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "重试";
+    retry.addEventListener("click", () => location.reload());
+    const hint = document.createElement("p");
+    hint.className = "boot-error-hint";
+    hint.textContent = "如果反复出现，先关闭其他 Thinking Canvas 窗口再试。";
+    node.append(title, detail, retry, hint);
   }
 }
 

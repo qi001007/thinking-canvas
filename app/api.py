@@ -112,7 +112,7 @@ class FileApi:
 
         return {
             "ok": True,
-            "version": "0.3.3",
+            "version": "0.3.4",
             "platform": platform.system(),
             "dataDir": str(self._data_dir()),
             "boardsDir": str(self._boards_dir()),
