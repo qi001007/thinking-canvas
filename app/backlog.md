@@ -6,3 +6,5 @@
 - smoke 看门狗 40 秒；本机 WebView2 窗口被遮挡时用 `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--disable-gpu` 复测。
 - 桌面桥接等待 15 秒，超时显示可重试错误页；正常窗口单实例，WebView2 使用固定 profile。
 - 启动错误层必须保留 `[hidden] { display:none }`；否则会变成全屏空白遮罩。
+- 窗口保持不透明 `background_color`；删掉它会走透明 WebView2 合成，显卡上可能明显变慢。
+- 正常窗口启动时短暂置顶，`__TC_READY__` 后取消置顶；否则打包版的 WebView2 API 注入会被未激活窗口拖慢。

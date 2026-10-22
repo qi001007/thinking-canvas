@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.6 · 2026-10-23
+
+- Restore the opaque `background_color` window; removing it during the blank-window diagnosis made WebView2 use a transparent composition path, which can make drawing/labels noticeably slower on some GPUs.
+- Keep the v0.3.5 overlay fix, single instance and fixed profile.
+- Show the window on top while WebView2/API initializes, then drop it to normal z-order after the page is ready. This keeps the packaged window from waiting on a throttled/hidden renderer.
+- Measured on this machine: page ready ~0.72s; 60-frame average 16.7ms / max 34.5ms with the opaque window.
+
 ## 0.3.5 · 2026-10-23
 
 - Fix the blank window: the boot-error overlay used `display:flex` and ignored the `hidden` attribute, covering the app with an empty paper layer after a successful start. Added `.boot-error[hidden] { display:none }`.

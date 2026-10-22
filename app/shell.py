@@ -9,6 +9,7 @@ import shutil
 import sys
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 # PyInstaller's windowed mode leaves stdout/stderr as None; pywebview and
@@ -127,13 +128,30 @@ def main(argv: list[str] | None = None) -> int:
         width=1450,
         height=900,
         min_size=(1100, 700),
+        background_color="#f7f5ef",
         text_select=True,
         hidden=False,
-        on_top=smoke,
+        on_top=True,
         focus=True,
         confirm_close=False,
     )
     api.attach(window)
+
+    def _drop_on_top() -> None:
+        for _ in range(80):
+            try:
+                if window.evaluate_js("Boolean(window.__TC_READY__)"):
+                    break
+            except Exception:
+                pass
+            time.sleep(0.25)
+        try:
+            window.on_top = False
+        except Exception:
+            pass
+
+    if not smoke:
+        threading.Thread(target=_drop_on_top, daemon=True).start()
     try:
         if smoke:
             api.smoke_mode = True
