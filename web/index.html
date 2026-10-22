@@ -35,20 +35,38 @@
       </div>
     </header>
 
-    <div class="workspace">
-      <aside class="sidebar" id="sidebar">
-        <div class="board-section">
+    <div class="workspace" id="workspace">
+      <aside class="pane board-pane" id="board-pane" aria-label="画板管理">
+        <div class="pane-rail">
+          <button id="btn-board-rail" class="rail-btn" title="展开画板栏" aria-label="展开画板栏">
+            <span data-icon="board"></span>
+          </button>
+          <span id="board-rail-count" class="rail-count">0</span>
+        </div>
+        <div class="pane-content" id="board-content">
           <div class="board-head">
             <span class="side-label">画板</span>
-            <button id="btn-new-board" class="board-new" title="新建画板">＋ 新建</button>
+            <span id="board-count" class="board-count"></span>
+            <div class="pane-actions">
+              <button id="btn-new-board" class="pane-icon" title="新建画板 (Ctrl+N)" aria-label="新建画板"><span data-icon="plus"></span></button>
+              <button id="btn-collapse-boards" class="pane-icon" title="收起画板栏" aria-label="收起画板栏"><span data-icon="chevronLeft"></span></button>
+            </div>
           </div>
-          <div id="board-list" class="board-list"></div>
+          <div class="board-search">
+            <span class="search-icon" data-icon="search"></span>
+            <input id="board-search" type="text" placeholder="搜索画板" autocomplete="off" spellcheck="false" aria-label="搜索画板" title="搜索画板 (Ctrl+K)">
+            <button id="board-search-clear" class="search-clear" type="button" title="清除搜索" aria-label="清除搜索" hidden>×</button>
+          </div>
+          <div id="board-list" class="board-list" aria-label="画板列表"></div>
           <div class="board-foot">
             <button id="btn-boards-folder" class="board-foot-btn" title="打开画板文件夹">boards/</button>
             <button id="btn-sample" class="board-foot-btn" title="新建示例画板">示例</button>
           </div>
         </div>
-        <div class="side-divider"></div>
+      </aside>
+      <div id="split-boards" class="pane-split" role="separator" aria-orientation="vertical" aria-label="调整画板栏宽度" title="拖动调整 · 双击复位" tabindex="0"></div>
+
+      <aside class="pane tools-pane" id="tools-pane" aria-label="工具与数据">
         <div class="side-group">
           <div class="side-label">工具</div>
           <button class="tool" data-tool="select" title="选择 (V)"><span class="tool-icon" data-icon="select"></span><span>选择</span><kbd>V</kbd></button>
@@ -76,8 +94,8 @@
           <button class="tool" data-add="text" title="纯文字"><span class="tool-icon" data-icon="text"></span><span>文字</span></button>
           <button class="tool" data-add="function" title="函数卡：签名 / 输入 / 输出"><span class="tool-icon" data-icon="function"></span><span>函数卡</span></button>
         </div>
-
       </aside>
+      <div id="split-tools" class="pane-split" role="separator" aria-orientation="vertical" aria-label="调整工具栏宽度" title="拖动调整 · 双击复位" tabindex="0"></div>
 
       <main class="stage" id="stage">
         <div class="viewport" id="viewport">
@@ -113,9 +131,16 @@
             <button id="btn-fit" class="zoom-btn fit" title="适应画布 (Ctrl+0)">适应</button>
           </div>
 
+          <div class="status-float" id="status-float" role="status">
+            <span class="status-hint" id="status-hint">双击编辑 · 空格拖动画布 · Ctrl+Enter 记录</span>
+            <span class="status-right"><span id="status-objects">0 个对象</span><span id="status-zoom">100%</span></span>
+            <button id="status-close" class="status-close" type="button" title="隐藏状态" aria-label="隐藏状态">×</button>
+          </div>
+
           <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
         </div>
       </main>
+      <div id="split-inspector" class="pane-split" role="separator" aria-orientation="vertical" aria-label="调整检查器宽度" title="拖动调整 · 双击复位" tabindex="0"></div>
 
       <aside class="inspector" id="inspector">
         <div id="inspector-content"></div>
@@ -138,11 +163,6 @@
         </div>
       </section>
     </div>
-
-    <footer class="statusbar">
-      <span id="status-hint">双击编辑 · 空格拖动画布 · Ctrl+Enter 记录</span>
-      <span class="status-right"><span id="status-objects">0 个对象</span><span id="status-zoom">100%</span></span>
-    </footer>
   </div>
 
   <div class="modal" id="help-modal" hidden>
@@ -155,7 +175,7 @@
         <button id="help-close" class="icon-btn" aria-label="关闭">×</button>
       </div>
       <div class="help-grid">
-        <div class="help-step"><b>1</b><div><strong>放数据</strong><p>点左侧“数组”“字典”或“节点”，双击格子改值。</p></div></div>
+        <div class="help-step"><b>1</b><div><strong>放数据</strong><p>点工具栏的“数组”“字典”或“节点”，双击格子改值。</p></div></div>
         <div class="help-step"><b>2</b><div><strong>放指针</strong><p>选中格子，右键加指针；拖指针换位置。</p></div></div>
         <div class="help-step"><b>3</b><div><strong>记录一步</strong><p>按 <kbd>Ctrl</kbd>+<kbd>Enter</kbd> 记录；改值再记。</p></div></div>
         <div class="help-step"><b>4</b><div><strong>回看变化</strong><p>点时间线回看；变化自动标黄。</p></div></div>
@@ -168,6 +188,7 @@
         <div><span>复制对象</span><kbd>Ctrl</kbd><kbd>D</kbd></div>
         <div><span>缩放 / 适应</span><kbd>+</kbd><kbd>−</kbd><kbd>Ctrl</kbd><kbd>0</kbd></div>
         <div><span>删除</span><kbd>Delete</kbd></div>
+        <div><span>搜索画板</span><kbd>Ctrl</kbd><kbd>K</kbd></div>
         <div><span>临时抓手</span><kbd>Space</kbd></div>
       </div>
       <p class="help-foot">数据保存在 boards/。</p>

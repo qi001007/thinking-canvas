@@ -5,6 +5,7 @@ const SESSION_KEY = "thinking-canvas.session.v1";
 const RECENT_KEY = "thinking-canvas.recent.v1";
 const BOARDS_KEY = "thinking-canvas.boards.v2";
 const DELETED_KEY = "thinking-canvas.boards.deleted.v2";
+const UI_KEY = "thinking-canvas.ui.v1";
 
 function pywebviewApiReady() {
   const api = window.pywebview?.api;
@@ -103,6 +104,14 @@ class DesktopBridge {
 
   async openBoardsFolder() {
     return window.pywebview.api.open_boards_folder();
+  }
+
+  async loadUiState() {
+    return window.pywebview.api.load_ui_state();
+  }
+
+  async saveUiState(state) {
+    return window.pywebview.api.save_ui_state(state);
   }
 }
 
@@ -297,6 +306,24 @@ class BrowserBridge {
 
   async openBoardsFolder() {
     return { ok: false, error: "浏览器预览没有本地画板文件夹。" };
+  }
+
+  async loadUiState() {
+    try {
+      const raw = localStorage.getItem(UI_KEY);
+      return { ok: true, state: raw ? JSON.parse(raw) : {} };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  }
+
+  async saveUiState(state) {
+    try {
+      localStorage.setItem(UI_KEY, JSON.stringify(state));
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   }
 
   addRecent(path, content) {

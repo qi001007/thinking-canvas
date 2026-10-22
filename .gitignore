@@ -33,3 +33,4 @@ Thumbs.db
 boards/*.tcanvas.json
 boards/.trash/
 boards/*.tmp
+boards/.ui-state.json

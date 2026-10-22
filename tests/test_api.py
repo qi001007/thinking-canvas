@@ -74,8 +74,19 @@ def test_app_info_reports_data_dir(tmp_path):
     api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
     info = api.app_info()
     assert info["ok"] is True
-    assert info["version"] == "0.2.1"
+    assert info["version"] == "0.3.0"
     assert info["dataDir"] == str(tmp_path)
+
+
+def test_ui_state_roundtrip_and_limits(tmp_path):
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
+    assert api.load_ui_state() == {"ok": True, "state": {}}
+    state = {"panes": {"boards": 212, "tools": 46, "inspector": 292}}
+    assert api.save_ui_state(state)["ok"] is True
+    assert api.load_ui_state()["state"] == state
+    assert api.save_ui_state([])["ok"] is False
+    assert api.save_ui_state({"x": "a" * (65 * 1024)})["ok"] is False
+    assert api.list_boards()["items"] == []
 
 
 def test_board_crud_and_trash(tmp_path):

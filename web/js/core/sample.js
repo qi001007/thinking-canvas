@@ -14,8 +14,8 @@ export function createSampleProject() {
     complexity: "O(n²) / O(1)",
   });
   const sticky = addObject(project, "sticky", {
-    x: 470,
-    y: 40,
+    x: 50,
+    y: 260,
     w: 310,
     h: 124,
     name: "不变量",
@@ -24,14 +24,14 @@ export function createSampleProject() {
   });
   const array = addObject(project, "array", {
     x: 50,
-    y: 290,
+    y: 420,
     name: "nums",
     rows: 1,
     cols: 4,
   });
   const swapped = addObject(project, "variable", {
-    x: 470,
-    y: 290,
+    x: 50,
+    y: 580,
     name: "swapped",
     value: "—",
   });

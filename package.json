@@ -1,11 +1,11 @@
 {
   "name": "thinking-canvas",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "A desktop thinking canvas for tracing algorithms by hand.",
   "scripts": {
-    "test": "node --test tests/core.test.mjs",
+    "test": "node --test tests/core.test.mjs tests/panes.test.mjs",
     "serve": "python -m http.server 8765 --directory web"
   }
 }

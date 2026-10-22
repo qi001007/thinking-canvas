@@ -31,10 +31,13 @@
   --radius: 12px;
   --radius-sm: 8px;
   --topbar-h: 54px;
-  --status-h: 26px;
-  --sidebar-w: 190px;
-  --inspector-w: 300px;
+  --boards-w: 212px;
+  --tools-w: 168px;
+  --inspector-w: 292px;
+  --pane-split: 5px;
   --timeline-h: 84px;
+  --scroll-thumb: #cec7b9;
+  --scroll-thumb-hover: #b3aa99;
   --font-ui: "Inter", "Noto Sans SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 }

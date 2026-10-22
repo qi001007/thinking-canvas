@@ -30,6 +30,8 @@ const PATHS = {
   code: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 114 2c-.8.6-1.5 1.1-1.5 2.5M12 17h.01"/>',
   menu: '<path d="M5 7h14M5 12h14M5 17h14"/>',
+  board: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M8 9h13"/>',
+  search: '<circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/>',
 };
 
 export function icon(name) {

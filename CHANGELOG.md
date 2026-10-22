@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 · 2026-10-22
+
+- Split board management and tool controls into two panes, so a long board list no longer pushes tools down.
+- Board pane, tool pane and inspector border are draggable; widths persist in `boards/.ui-state.json`; double-click a splitter to reset.
+- Compress the board pane to a 44px icon rail and the tool pane to a 46px icon rail; both restore on click/drag.
+- Search boards by title (`Ctrl+K`, `Esc`, `Enter`), with match count and an empty result state.
+- Replace the fixed status bar with a transient overlay that auto-hides and has a dismiss button.
+- Thin, unified scrollbars that stay transparent until the matching pane is hovered.
+- Reflow the sample board vertically and adapt fit padding (56–90px) so narrow windows stay readable.
+
 ## 0.2.1 · 2026-10-22
 
 - Migrate a legacy `%APPDATA%/ThinkingCanvas/session.json` even when `boards/` already contains boards, so an old in-progress board is not stranded outside the unified folder.

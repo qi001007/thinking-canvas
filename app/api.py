@@ -102,18 +102,46 @@ class FileApi:
     def _recent_file(self) -> Path:
         return self._data_dir() / "recent.json"
 
+    def _ui_state_file(self) -> Path:
+        return self._boards_dir() / ".ui-state.json"
+
     # -- info ----------------------------------------------------------
     def app_info(self) -> dict[str, Any]:
         import platform
 
         return {
             "ok": True,
-            "version": "0.2.1",
+            "version": "0.3.0",
             "platform": platform.system(),
             "dataDir": str(self._data_dir()),
             "boardsDir": str(self._boards_dir()),
             "smoke": self.smoke_mode,
         }
+
+    # -- ui state ------------------------------------------------------
+    def load_ui_state(self) -> dict[str, Any]:
+        path = self._ui_state_file()
+        try:
+            state = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(state, dict):
+                raise ValueError("UI 状态必须是对象。")
+            return {"ok": True, "state": state}
+        except FileNotFoundError:
+            return {"ok": True, "state": {}}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def save_ui_state(self, state: Any) -> dict[str, Any]:
+        if not isinstance(state, dict):
+            return {"ok": False, "error": "UI 状态必须是对象。"}
+        try:
+            text = json.dumps(state, ensure_ascii=False)
+            if len(text.encode("utf-8")) > 64 * 1024:
+                return {"ok": False, "error": "UI 状态超过 64 KB。"}
+            _atomic_write(self._ui_state_file(), text)
+            return {"ok": True}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
 
     # -- boards --------------------------------------------------------
     def _boards_dir(self) -> Path:

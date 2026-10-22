@@ -242,7 +242,10 @@ export class Canvas {
       return;
     }
     const rect = this.viewportEl.getBoundingClientRect();
-    const next = fitBounds(bounds, rect.width || 1000, rect.height || 700, 90);
+    const width = rect.width || 1000;
+    const height = rect.height || 700;
+    const padding = Math.max(56, Math.min(90, Math.round(Math.min(width, height) * 0.09)));
+    const next = fitBounds(bounds, width, height, padding);
     this.setViewport(next);
   }
 
@@ -356,7 +359,13 @@ export class Canvas {
     }
     if (event.button !== 0) return;
     const target = event.target;
-    if (target.closest("[contenteditable='true'], input, textarea, .card-tool, .pointer-pill")) return;
+    if (
+      target.closest(
+        "[contenteditable='true'], input, textarea, .card-tool, .pointer-pill, .status-float, .zoom-controls, .history-banner, .empty-state",
+      )
+    ) {
+      return;
+    }
     if (event.target.closest(".wire.hit")) return;
 
     const tool = this.app.ui.tool;
@@ -644,7 +653,7 @@ export class Canvas {
     this.canvasState.cellDrag = { objectId, anchorRow: row, anchorCol: col, moved: false };
     this.app.selectionChanged(false);
     this.app.canvas.paintCellSelection();
-    this.app.statusHint.textContent = "格子里输入 · Esc 退出";
+    this.app.showStatus("格子里输入 · Esc 退出", 2600);
     event.stopPropagation();
   }
 

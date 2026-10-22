@@ -6,7 +6,7 @@ import { recordStep } from "./core/steps.js";
 import { App } from "./ui/app.js";
 import { createBridge } from "./ui/bridge.js";
 
-window.__TC_SMOKE__ = () => {
+window.__TC_SMOKE__ = async () => {
   try {
     const sample = createSampleProject();
     const restored = deserializeProject(serializeProject(sample));
@@ -19,19 +19,40 @@ window.__TC_SMOKE__ = () => {
     project.live.states[array.id].data[0][1] = "9";
     recordStep(project, { title: "修改" });
     const diff = diffForView(project, project.steps[1].id);
+    const boardPane = document.getElementById("board-pane");
+    const toolsPane = document.getElementById("tools-pane");
+    const boardWidth = boardPane.getBoundingClientRect().width;
+    window.__TC__?.panes.setWidth("boards", 300);
+    const wideBoardWidth = boardPane.getBoundingClientRect().width;
+    window.__TC__?.panes.setWidth("boards", 212);
+    const panesOk =
+      boardPane !== toolsPane &&
+      document.querySelectorAll(".pane-split").length === 3 &&
+      wideBoardWidth > boardWidth + 10;
+    const bridge = window.__TC__?.bridge;
+    const uiBefore = await bridge?.loadUiState?.();
+    const uiSaved = await bridge?.saveUiState?.({ panes: { boards: 224, tools: 112, inspector: 300 } });
+    const uiAfter = await bridge?.loadUiState?.();
+    const uiOk = Boolean(uiBefore?.ok && uiSaved?.ok && uiAfter?.state?.panes?.boards === 224);
     return {
       ok:
         Boolean(document.getElementById("app")) &&
         restored.steps.length === 4 &&
         sampleDiff.hasChanges &&
         diff.hasChanges &&
-        diff.cells.size === 1,
+        diff.cells.size === 1 &&
+        panesOk &&
+        uiOk &&
+        Boolean(document.getElementById("board-search")) &&
+        Boolean(document.getElementById("status-float")),
       dpr: window.devicePixelRatio,
       inner: [window.innerWidth, window.innerHeight],
       screen: [screen.width, screen.height],
       sampleSteps: restored.steps.length,
       sampleChanges: sampleDiff.count,
       editedChanges: diff.count,
+      panes: [boardWidth, wideBoardWidth],
+      uiState: uiOk,
     };
   } catch (error) {
     return { ok: false, error: `${error.name}: ${error.message}` };
@@ -52,7 +73,7 @@ async function boot() {
       }
     }
     if (smoke) {
-      const result = window.__TC_SMOKE__();
+      const result = await window.__TC_SMOKE__();
       if (window.pywebview?.api?.smoke_report) await window.pywebview.api.smoke_report(result);
       else console.log("smoke", result);
     }

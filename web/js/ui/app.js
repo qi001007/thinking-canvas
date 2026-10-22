@@ -22,6 +22,7 @@ import { Timeline } from "./timeline.js";
 import { Inspector } from "./inspector.js";
 import { QuickAdd } from "./quickadd.js";
 import { BoardsPanel } from "./boards.js";
+import { Panes } from "./panes.js";
 import { debounce, el, isTypingTarget } from "./dom.js";
 import { hydrateIcons, icon } from "./icons.js";
 
@@ -64,13 +65,18 @@ export class App {
     this.redoBtn = document.getElementById("btn-redo");
     this.recordBtn = document.getElementById("btn-record");
     this.statusHint = document.getElementById("status-hint");
+    this.statusFloat = document.getElementById("status-float");
+    this.statusClose = document.getElementById("status-close");
+    this.statusTimer = null;
     this.helpModal = document.getElementById("help-modal");
     this.canvas = new Canvas(this);
     this.timeline = new Timeline(this);
     this.inspector = new Inspector(this);
     this.quickAdd = new QuickAdd(this);
     this.boardsPanel = new BoardsPanel(this);
+    this.panes = new Panes(bridge);
     this.bindUI();
+    this.bindStatus();
     this.bindShortcuts();
   }
 
@@ -78,10 +84,12 @@ export class App {
     hydrateIcons();
     this.undoBtn.innerHTML = icon("undo");
     this.redoBtn.innerHTML = icon("redo");
+    await this.panes.hydrate();
     await this.loadBoardsAndOpen();
     this.renderAll();
     this.canvas.fit();
     this.syncChrome();
+    this.showStatus(null, 6500);
     window.__TC_READY__ = true;
     window.__TC__ = this;
   }
@@ -228,6 +236,7 @@ export class App {
 
   async createBoard(options = {}) {
     this.autosave.cancel();
+    this.boardsPanel.setQuery("");
     const project = createProject(this.uniqueBoardTitle());
     const content = serializeProject(project);
     const result = await this.bridge.createBoard(content, project.title);
@@ -270,12 +279,14 @@ export class App {
     if (!board) return;
     if (!window.confirm(`删除「${board.title}」？\n文件会移到 boards/.trash。`)) return;
     this.autosave.cancel();
-    if (path === this.path) await this.runAutosave();
+    const wasActive = path === this.path;
+    if (wasActive) await this.runAutosave();
     const result = await this.bridge.deleteBoard(path);
     if (!result?.ok) {
       this.toast(result?.error || "删除失败");
       return;
     }
+    if (wasActive) this.boardsPanel.setQuery("");
     if (path === this.path) {
       const next = this.boards.find((item) => item.path !== path);
       if (next) {
@@ -319,6 +330,7 @@ export class App {
 
   async loadSample() {
     this.autosave.cancel();
+    this.boardsPanel.setQuery("");
     const sample = createSampleProject();
     const emptyCurrent = !this.project.objects.length && !this.project.steps.length && this.boards.length <= 1 && this.path;
     if (emptyCurrent) {
@@ -408,8 +420,30 @@ export class App {
     if (tool !== "select") this.ui.cellSelection = null;
     this.canvas.renderChrome();
     this.syncSidebar();
-    this.statusHint.textContent = TOOL_HINTS[tool] || TOOL_HINTS.select;
+    this.showStatus(TOOL_HINTS[tool] || TOOL_HINTS.select);
     if (announce && tool !== "select") this.canvas.viewportEl.focus();
+  }
+
+  bindStatus() {
+    this.statusFloat.addEventListener("mouseenter", () => clearTimeout(this.statusTimer));
+    this.statusFloat.addEventListener("mouseleave", () => {
+      if (!this.statusFloat.classList.contains("is-hidden")) this.showStatus(null, 1600);
+    });
+    this.statusClose.addEventListener("click", () => this.hideStatus());
+  }
+
+  showStatus(text, duration = 3200) {
+    if (text != null) this.statusHint.textContent = text;
+    clearTimeout(this.statusTimer);
+    this.statusFloat.inert = false;
+    this.statusFloat.classList.remove("is-hidden");
+    this.statusTimer = setTimeout(() => this.hideStatus(), duration);
+  }
+
+  hideStatus() {
+    clearTimeout(this.statusTimer);
+    this.statusFloat.inert = true;
+    this.statusFloat.classList.add("is-hidden");
   }
 
   addObject(kind) {
@@ -962,7 +996,7 @@ export class App {
       this.syncChrome();
     });
     this.titleInput.addEventListener("blur", () => this.syncChrome());
-    document.getElementById("sidebar").addEventListener("click", (event) => {
+    document.getElementById("tools-pane").addEventListener("click", (event) => {
       const tool = event.target.closest("[data-tool]")?.dataset.tool;
       if (tool) {
         this.setTool(tool);
@@ -1007,6 +1041,12 @@ export class App {
       if (mod && event.key.toLowerCase() === "n") {
         event.preventDefault();
         this.newBoard();
+        return;
+      }
+      if (mod && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        this.panes.expandBoards();
+        this.boardsPanel.focusSearch();
         return;
       }
       if (typing) {
