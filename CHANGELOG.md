@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.5 · 2026-10-23
+
+- Fix the blank window: the boot-error overlay used `display:flex` and ignored the `hidden` attribute, covering the app with an empty paper layer after a successful start. Added `.boot-error[hidden] { display:none }`.
+- Reuse one WebView2 profile and allow only one normal app instance; this stops the 1.7 GB temp-profile buildup.
+- Add a smoke assertion that the hidden boot overlay really has `display:none`.
+
 ## 0.3.4 · 2026-10-23
 
 - Wait up to 15 seconds for pywebview API injection instead of failing at 6 seconds.

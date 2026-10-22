@@ -1382,6 +1382,10 @@ body.pane-dragging .workspace * {
   z-index: 999;
 }
 
+.boot-error[hidden] {
+  display: none;
+}
+
 .boot-error strong {
   color: var(--ink);
   font-family: var(--font-ui);

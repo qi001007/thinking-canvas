@@ -48,6 +48,7 @@ window.__TC_SMOKE__ = async () => {
     );
     const sampleRow = Boolean(document.getElementById("sample-board"));
     const duplicateRecord = Boolean(document.getElementById("btn-timeline-record"));
+    const bootOverlayHidden = getComputedStyle(document.getElementById("boot-error")).display === "none";
     app.addObject("array");
     const arrayCard = document.querySelector(".array-card");
     const arrayMeta = arrayCard?.querySelector(".card-meta")?.textContent || "";
@@ -79,6 +80,7 @@ window.__TC_SMOKE__ = async () => {
         sampleOk &&
         sampleRow &&
         !duplicateRecord &&
+        bootOverlayHidden &&
         cardActionsOk &&
         Boolean(document.getElementById("board-search")) &&
         Boolean(document.getElementById("status-float")),
@@ -93,6 +95,7 @@ window.__TC_SMOKE__ = async () => {
       sampleStable: sampleOk,
       sampleDelete: sampleDelete?.ok,
       duplicateRecord,
+      bootOverlayHidden,
       cardActions: cardActionsOk,
     };
   } catch (error) {
