@@ -50,13 +50,24 @@ def _valid_project_json(text: str) -> None:
 class FileApi:
     """Methods called from JS as ``window.pywebview.api.<name>(...)``."""
 
-    def __init__(self, data_dir: Path | None = None, boards_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        data_dir: Path | None = None,
+        boards_dir: Path | None = None,
+        *,
+        ready_callback=None,
+        heartbeat_callback=None,
+        log_callback=None,
+    ) -> None:
         # pywebview enumerates public js_api attributes; keep non-method state
         # private or it recursively walks the native Window/Path graphs.
         self._window = None
         self._folder = Path(data_dir) if data_dir else None
         self._boards_override = Path(boards_dir) if boards_dir else None
         self._boards_ready = False
+        self._ready_callback = ready_callback
+        self._heartbeat_callback = heartbeat_callback
+        self._log_callback = log_callback
         self.smoke_mode = False
         self.smoke_payload: dict[str, Any] = {"ok": False, "error": "前端没有回报 smoke 结果。"}
 
@@ -66,6 +77,18 @@ class FileApi:
                 print(f"[js] {message}", flush=True)
             except Exception:
                 pass
+        if self._log_callback:
+            self._log_callback(str(message))
+        return {"ok": True}
+
+    def boot_ready(self) -> dict[str, Any]:
+        if self._ready_callback:
+            self._ready_callback()
+        return {"ok": True}
+
+    def heartbeat(self) -> dict[str, Any]:
+        if self._heartbeat_callback:
+            self._heartbeat_callback()
         return {"ok": True}
 
     def write_smoke_payload(self) -> None:
@@ -113,7 +136,7 @@ class FileApi:
 
         return {
             "ok": True,
-            "version": "0.3.7",
+            "version": "0.3.8",
             "platform": platform.system(),
             "dataDir": str(self._data_dir()),
             "boardsDir": str(self._boards_dir()),

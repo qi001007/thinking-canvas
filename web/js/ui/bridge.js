@@ -43,6 +43,18 @@ class DesktopBridge {
     return window.pywebview.api.app_info();
   }
 
+  async bootLog(stage) {
+    return window.pywebview.api.js_log(stage);
+  }
+
+  async bootReady() {
+    return window.pywebview.api.boot_ready();
+  }
+
+  async heartbeat() {
+    return window.pywebview.api.heartbeat();
+  }
+
   async openProject() {
     return window.pywebview.api.open_project();
   }
@@ -134,6 +146,18 @@ class BrowserBridge {
 
   async appInfo() {
     return { ok: true, version: "0.1.0-dev", platform: "web", dataDir: "localStorage" };
+  }
+
+  async bootLog() {
+    return { ok: true };
+  }
+
+  async bootReady() {
+    return { ok: true };
+  }
+
+  async heartbeat() {
+    return { ok: true };
   }
 
   async openProject() {

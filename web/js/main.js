@@ -129,8 +129,27 @@ window.__TC_SMOKE__ = async () => {
 async function boot() {
   try {
     const bridge = await createBridge();
+    try {
+      await bridge.bootLog?.("bridge-ready");
+    } catch (error) {
+      console.warn("boot log failed", error);
+    }
     const app = new App(createProject(), "", bridge);
     await app.start();
+    try {
+      await bridge.bootLog?.("app-ready");
+    } catch (error) {
+      console.warn("boot log failed", error);
+    }
+    try {
+      await bridge.bootReady?.();
+    } catch (error) {
+      console.warn("boot ready handshake failed", error);
+    }
+    clearInterval(window.__TC_HEARTBEAT__);
+    window.__TC_HEARTBEAT__ = setInterval(() => {
+      bridge.heartbeat?.().catch(() => {});
+    }, 2000);
     let smoke = new URLSearchParams(location.search).get("smoke") === "1";
     if (!smoke && bridge.isDesktop) {
       try {

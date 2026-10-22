@@ -4,3 +4,4 @@
 - 2026-10-22：增加 5 项文件 API 测试；smoke 改为真实 WebView2 回调。
 - 2026-10-22：增加画板 CRUD/路径安全/迁移测试，pytest 共 9 项。
 - 2026-10-23：Node 18 项、pytest 11 项；smoke 新增 `eraser` 断言（生成笔迹→检查 16px 命中带→实际擦除）。
+- 2026-10-23：v0.3.8 增加 `test_instance.py`（标记/PID 清理、心跳新鲜度），pytest 共 13 项；CI 改跑整个 `tests/`。

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.8 · 2026-10-23
+
+- Add a runtime heartbeat and single-instance health hand-off. A second launch now detects a stale/black WebView2 window, terminates it, and opens a clean window instead of only focusing the dead one.
+- Add a 25s startup watchdog and native error dialog so a hung startup cannot silently hold the instance lock.
+- Add `startup.log` with mutex/profile/window/frontend stages.
+- Add instance-state tests; CI now runs the whole `tests/` directory.
+
 ## 0.3.7 · 2026-10-23
 
 - Pen strokes get a 16px invisible hit area, so clicking a thin stroke selects it.
