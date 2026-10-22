@@ -7,11 +7,14 @@ export class Timeline {
   constructor(app) {
     this.app = app;
     this.list = document.getElementById("step-list");
+    this.liveStep = document.getElementById("live-step");
     this.prev = document.getElementById("btn-prev-step");
     this.next = document.getElementById("btn-next-step");
     this.diffToggle = document.getElementById("toggle-diff");
     this.recordButton = document.getElementById("btn-timeline-record");
     this.list.addEventListener("click", (event) => this.onClick(event));
+    this.list.addEventListener("keydown", (event) => this.onKeyDown(event));
+    this.liveStep.addEventListener("click", () => this.app.goLive());
     this.recordButton.addEventListener("click", () => this.app.recordStep());
     this.prev.addEventListener("click", () => this.app.goPrevious());
     this.next.addEventListener("click", () => this.app.goNext());
@@ -30,19 +33,19 @@ export class Timeline {
       const active = app.ui.viewStepId === step.id;
       const count = diff.count;
       parts.push(`
-        <button class="step-chip${active ? " active" : ""}" data-step-id="${step.id}" title="${escapeHtml(step.note || step.title)}">
+        <div class="step-chip${active ? " active" : ""}" data-step-id="${step.id}" role="button" tabindex="0" title="${escapeHtml(step.note || step.title)}">
           <span class="step-num">${index + 1}</span>
           <span class="step-name">${escapeHtml(step.title)}</span>
           ${count ? `<span class="step-change">${count} 变化</span>` : ""}
-        </button>`);
+          <button class="step-del" data-delete-step="${step.id}" title="删除这一步" aria-label="删除这一步">×</button>
+        </div>`);
     });
     const liveDiff = diffForView(app.project, null);
-    parts.push(`
-      <button class="step-chip live${app.ui.viewStepId ? "" : " active"}" data-step-id="" title="当前草稿；记录后会变成新的一步">
-        <span class="step-num">当前</span>
-        <span class="step-name">${liveDiff.count ? "未记录" : "与最后一步一致"}</span>
-        ${liveDiff.count ? `<span class="step-change">${liveDiff.count} 变化</span>` : ""}
-      </button>`);
+    this.liveStep.innerHTML = `
+      <div class="step-chip live${app.ui.viewStepId ? "" : " active"}" title="当前">
+        <span class="step-name">当前</span>
+        ${liveDiff.count ? `<span class="step-change">${liveDiff.count}</span>` : ""}
+      </div>`;
     this.list.innerHTML = parts.join("");
     this.recordButton.disabled = Boolean(app.ui.viewStepId);
     this.recordButton.title = app.ui.viewStepId ? "回到当前后才能记录" : "记录当前状态 (Ctrl+Enter)";
@@ -54,13 +57,28 @@ export class Timeline {
   }
 
   onClick(event) {
+    const deleteButton = event.target.closest("[data-delete-step]");
+    if (deleteButton) {
+      event.stopPropagation();
+      this.app.deleteStep(deleteButton.dataset.deleteStep);
+      return;
+    }
     const chip = event.target.closest("[data-step-id]");
     if (chip) {
       const id = chip.dataset.stepId || null;
       if (id) this.app.goToStep(id);
       else this.app.goLive();
-      return;
     }
+  }
+
+  onKeyDown(event) {
+    const chip = event.target.closest("[data-step-id]");
+    if (!chip || event.target.closest("[data-delete-step]")) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    const id = chip.dataset.stepId || null;
+    if (id) this.app.goToStep(id);
+    else this.app.goLive();
   }
 }
 

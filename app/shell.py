@@ -70,11 +70,9 @@ def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     smoke = "--smoke" in argv
     debug = "--dev" in argv
-    api = FileApi()
+    api = FileApi(boards_dir=tempfile.mkdtemp(prefix="tc-smoke-boards-") if smoke else None)
     query = "?desktop=1&smoke=1" if smoke else "?desktop=1"
     url = str(web_dir() / "index.html") + query
-    if smoke:
-        print("SMOKE create_window", flush=True)
     window = webview.create_window(
         WINDOW_TITLE,
         url=url,
@@ -90,15 +88,12 @@ def main(argv: list[str] | None = None) -> int:
         confirm_close=False,
     )
     api.attach(window)
-    if smoke:
-        print("SMOKE window_ready", flush=True)
     try:
         if smoke:
             api.smoke_mode = True
             watchdog = threading.Timer(25, lambda: _smoke_timeout(api))
             watchdog.daemon = True
             watchdog.start()
-            print("SMOKE start", flush=True)
             webview.start(
                 http_server=True,
                 debug=False,

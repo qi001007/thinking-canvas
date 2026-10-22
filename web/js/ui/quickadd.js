@@ -24,7 +24,7 @@ export class QuickAdd {
     const object = getObject(app.project, objectId);
     if (!object) return;
     if (app.ui.viewStepId) {
-      app.toast("正在查看历史步骤，回到当前才能修改。");
+      app.toast("只读");
       return;
     }
     this.close();

@@ -3,6 +3,8 @@ import { downloadText } from "./dom.js";
 
 const SESSION_KEY = "thinking-canvas.session.v1";
 const RECENT_KEY = "thinking-canvas.recent.v1";
+const BOARDS_KEY = "thinking-canvas.boards.v2";
+const DELETED_KEY = "thinking-canvas.boards.deleted.v2";
 
 function pywebviewApiReady() {
   const api = window.pywebview?.api;
@@ -74,11 +76,42 @@ class DesktopBridge {
   async exportText(name, content) {
     return window.pywebview.api.export_text(name, content);
   }
+
+  async boardsInfo() {
+    return window.pywebview.api.boards_info();
+  }
+
+  async listBoards() {
+    return window.pywebview.api.list_boards();
+  }
+
+  async createBoard(content, title) {
+    return window.pywebview.api.create_board(content, title);
+  }
+
+  async saveBoard(path, content) {
+    return window.pywebview.api.save_board(path, content);
+  }
+
+  async loadBoard(path) {
+    return window.pywebview.api.load_board(path);
+  }
+
+  async deleteBoard(path) {
+    return window.pywebview.api.delete_board(path);
+  }
+
+  async openBoardsFolder() {
+    return window.pywebview.api.open_boards_folder();
+  }
 }
 
 class BrowserBridge {
   constructor() {
     this.fakePath = "";
+    if (new URLSearchParams(location.search).get("fresh") === "1") {
+      localStorage.removeItem(BOARDS_KEY);
+    }
   }
 
   get isDesktop() {
@@ -163,6 +196,107 @@ class BrowserBridge {
   async exportText(name, content) {
     downloadText(name || "thinking-canvas.json", content);
     return { ok: true, path: name };
+  }
+
+  // Browser preview uses localStorage as a stand-in for boards/.
+  boardStore() {
+    try {
+      const raw = localStorage.getItem(BOARDS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  writeBoardStore(store) {
+    localStorage.setItem(BOARDS_KEY, JSON.stringify(store));
+  }
+
+  boardItem(entry) {
+    return {
+      path: entry.path,
+      title: entry.title,
+      updatedAt: entry.updatedAt,
+      mtime: entry.mtime,
+      size: entry.content.length,
+      invalid: false,
+    };
+  }
+
+  async boardsInfo() {
+    return { ok: true, dir: "localStorage（浏览器预览）" };
+  }
+
+  async listBoards() {
+    const store = this.boardStore();
+    const items = Object.values(store)
+      .sort((a, b) => b.mtime - a.mtime)
+      .map((entry) => this.boardItem(entry));
+    return { ok: true, dir: "localStorage（浏览器预览）", items };
+  }
+
+  async createBoard(content, title) {
+    const store = this.boardStore();
+    let parsed = {};
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return { ok: false, error: "画板内容不是有效 JSON。" };
+    }
+    const id = `local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const entry = {
+      path: `local:${id}`,
+      title: parsed.title || title || "未命名画板",
+      content,
+      updatedAt: parsed.updatedAt || new Date().toISOString(),
+      mtime: Date.now(),
+    };
+    store[entry.path] = entry;
+    this.writeBoardStore(store);
+    return { ok: true, path: entry.path, item: this.boardItem(entry) };
+  }
+
+  async saveBoard(path, content) {
+    const store = this.boardStore();
+    if (!store[path]) return { ok: false, error: "画板不存在。" };
+    let parsed = {};
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return { ok: false, error: "画板内容不是有效 JSON。" };
+    }
+    store[path].content = content;
+    store[path].title = parsed.title || store[path].title;
+    store[path].updatedAt = parsed.updatedAt || new Date().toISOString();
+    store[path].mtime = Date.now();
+    this.writeBoardStore(store);
+    return { ok: true, path, item: this.boardItem(store[path]) };
+  }
+
+  async loadBoard(path) {
+    const entry = this.boardStore()[path];
+    if (!entry) return { ok: false, error: "画板不存在。" };
+    return { ok: true, path, content: entry.content };
+  }
+
+  async deleteBoard(path) {
+    const store = this.boardStore();
+    if (!store[path]) return { ok: false, error: "画板不存在。" };
+    let deleted = [];
+    try {
+      deleted = JSON.parse(localStorage.getItem(DELETED_KEY) || "[]");
+    } catch {
+      deleted = [];
+    }
+    deleted.unshift({ ...store[path], deletedAt: Date.now() });
+    localStorage.setItem(DELETED_KEY, JSON.stringify(deleted.slice(0, 20)));
+    delete store[path];
+    this.writeBoardStore(store);
+    return { ok: true, trash: "localStorage" };
+  }
+
+  async openBoardsFolder() {
+    return { ok: false, error: "浏览器预览没有本地画板文件夹。" };
   }
 
   addRecent(path, content) {

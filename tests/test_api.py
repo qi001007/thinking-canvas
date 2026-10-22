@@ -23,7 +23,7 @@ def project_json(title="测试画板"):
 
 
 def test_save_open_and_recent(tmp_path):
-    api = FileApi(data_dir=tmp_path)
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
     path = tmp_path / "board.tcanvas.json"
     content = json.dumps(project_json("两数之和"), ensure_ascii=False)
     result = api.save_project(str(path), content)
@@ -42,7 +42,7 @@ def test_save_open_and_recent(tmp_path):
 
 
 def test_session_roundtrip_and_clear(tmp_path):
-    api = FileApi(data_dir=tmp_path)
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
     content = json.dumps(project_json(), ensure_ascii=False)
     assert api.save_session(content, "x.tcanvas.json")["ok"] is True
     loaded = api.load_session()
@@ -54,7 +54,7 @@ def test_session_roundtrip_and_clear(tmp_path):
 
 
 def test_invalid_content_is_rejected_without_overwriting(tmp_path):
-    api = FileApi(data_dir=tmp_path)
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
     path = tmp_path / "board.tcanvas.json"
     path.write_text("keep me", encoding="utf-8")
     result = api.save_project(str(path), "{not json")
@@ -64,15 +64,58 @@ def test_invalid_content_is_rejected_without_overwriting(tmp_path):
 
 
 def test_save_session_rejects_wrong_shape(tmp_path):
-    api = FileApi(data_dir=tmp_path)
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
     result = api.save_session(json.dumps({"objects": []}), "")
     assert result["ok"] is False
     assert api.load_session()["empty"] is True
 
 
 def test_app_info_reports_data_dir(tmp_path):
-    api = FileApi(data_dir=tmp_path)
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
     info = api.app_info()
     assert info["ok"] is True
-    assert info["version"] == "0.1.1"
+    assert info["version"] == "0.2.0"
     assert info["dataDir"] == str(tmp_path)
+
+
+def test_board_crud_and_trash(tmp_path):
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
+    first = api.create_board(json.dumps(project_json("画板 A"), ensure_ascii=False), "画板 A")
+    assert first["ok"] is True
+    path = Path(first["path"])
+    assert path.parent == tmp_path / "boards"
+    assert path.name.endswith(".tcanvas.json")
+
+    listed = api.list_boards()
+    assert listed["ok"] is True
+    assert [item["title"] for item in listed["items"]] == ["画板 A"]
+
+    changed = json.dumps(project_json("画板 B"), ensure_ascii=False)
+    assert api.save_board(str(path), changed)["ok"] is True
+    loaded = api.load_board(str(path))
+    assert loaded["ok"] is True
+    assert json.loads(loaded["content"])["title"] == "画板 B"
+    assert api.list_boards()["items"][0]["title"] == "画板 B"
+
+    deleted = api.delete_board(str(path))
+    assert deleted["ok"] is True
+    assert not path.exists()
+    assert Path(deleted["trash"]).exists()
+    assert api.list_boards()["items"] == []
+
+
+def test_board_path_must_stay_inside_boards(tmp_path):
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
+    outside = tmp_path / "outside.tcanvas.json"
+    result = api.save_board(str(outside), json.dumps(project_json(), ensure_ascii=False))
+    assert result["ok"] is False
+    assert not outside.exists()
+
+
+def test_legacy_session_is_removed_after_empty_migration(tmp_path):
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
+    legacy = tmp_path / "session.json"
+    legacy.write_text(json.dumps({"content": json.dumps(project_json(), ensure_ascii=False)}), encoding="utf-8")
+    listed = api.list_boards()
+    assert listed["ok"] is True
+    assert legacy.exists() is False

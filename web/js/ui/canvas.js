@@ -361,7 +361,7 @@ export class Canvas {
 
     const tool = this.app.ui.tool;
     if (!this.editable && ["pen", "rect", "connector"].includes(tool)) {
-      this.app.toast("正在查看历史步骤，回到当前才能绘制。");
+      this.app.toast("只读");
       return;
     }
     if (tool === "pen") {
@@ -515,7 +515,7 @@ export class Canvas {
   startObjectDrag(event, object, element) {
     if (!object) return;
     if (!this.editable) {
-      this.app.toast("正在查看历史步骤，回到当前才能移动对象。");
+      this.app.toast("只读");
       return;
     }
     const app = this.app;
@@ -632,7 +632,7 @@ export class Canvas {
   // ------------------------------------------------------------- cell selection
   startCellSelection(event, cell) {
     if (!this.editable) {
-      this.app.toast("正在查看历史步骤，回到当前才能修改。");
+      this.app.toast("只读");
       return;
     }
     const objectId = cell.dataset.objectId;
@@ -644,7 +644,7 @@ export class Canvas {
     this.canvasState.cellDrag = { objectId, anchorRow: row, anchorCol: col, moved: false };
     this.app.selectionChanged(false);
     this.app.canvas.paintCellSelection();
-    this.app.statusHint.textContent = "格子已选中：拖动选范围 · 直接输入 · Esc 退出格子选择";
+    this.app.statusHint.textContent = "格子里输入 · Esc 退出";
     event.stopPropagation();
   }
 
@@ -686,7 +686,7 @@ export class Canvas {
   // ------------------------------------------------------------- cell editing
   beginCellEdit(objectId, row, col, initial = null) {
     if (!this.editable) {
-      this.app.toast("正在查看历史步骤，回到当前才能修改。");
+      this.app.toast("只读");
       return;
     }
     this.finishCellEdit(true);
@@ -769,7 +769,7 @@ export class Canvas {
     const editable = event.target.closest("[data-edit-field]");
     if (editable) {
       if (!this.editable) {
-        this.app.toast("正在查看历史步骤，回到当前才能修改。");
+        this.app.toast("只读");
         return;
       }
       this.beginInlineEdit(editable);
@@ -866,7 +866,7 @@ export class Canvas {
     if (!pill) return;
     event.stopPropagation();
     if (!this.editable) {
-      this.app.toast("正在查看历史步骤，回到当前才能移动指针。");
+      this.app.toast("只读");
       return;
     }
     const pointerId = pill.dataset.pointerId;
@@ -905,7 +905,7 @@ export class Canvas {
     drag.pill.style.opacity = "";
     this.worldEl.querySelectorAll(".pointer-drop").forEach((node) => node.classList.remove("pointer-drop"));
     if (!drag.target) {
-      this.app.toast("指针要放到格子、列表项、字典行或节点上。");
+      this.app.toast("放到格子上");
       return;
     }
     this.app.history.push(this.app.project);

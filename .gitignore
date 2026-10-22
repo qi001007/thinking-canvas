@@ -28,3 +28,8 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+
+# Local board data (managed by the app, never committed)
+boards/*.tcanvas.json
+boards/.trash/
+boards/*.tmp

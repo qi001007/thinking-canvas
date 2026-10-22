@@ -311,6 +311,157 @@ button {
   background: var(--paper);
 }
 
+
+/* ----------------------------------------------------------------- boards */
+.board-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 2px 6px;
+}
+
+.board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 8px 2px;
+}
+
+.board-head .side-label {
+  padding: 0;
+}
+
+.board-new {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.board-new:hover {
+  background: var(--accent-soft);
+  border-color: #d2e2f0;
+  color: var(--accent);
+}
+
+.board-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 188px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.board-item {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 6px 9px;
+  cursor: pointer;
+  outline: none;
+}
+
+.board-item:hover {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+.board-item:focus-visible {
+  border-color: var(--accent);
+}
+
+.board-item.active {
+  background: var(--accent-soft);
+  border-color: #d2e2f0;
+}
+
+.board-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 16px;
+}
+
+.board-item.active .board-title {
+  color: var(--accent-ink);
+}
+
+.board-meta {
+  margin-top: 1px;
+  font-size: 9px;
+  color: var(--faint);
+  font-family: var(--font-mono);
+}
+
+.board-delete {
+  position: absolute;
+  right: 4px;
+  top: 5px;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  padding: 0;
+}
+
+.board-item:hover .board-delete,
+.board-item.active .board-delete,
+.board-delete:focus-visible {
+  opacity: 1;
+}
+
+.board-delete:hover {
+  color: var(--red);
+  background: rgba(180, 84, 84, 0.1);
+}
+
+.board-foot {
+  display: flex;
+  gap: 4px;
+  padding: 2px 2px 0;
+}
+
+.board-foot-btn {
+  flex: 1;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--faint);
+  border-radius: 6px;
+  height: 23px;
+  font-size: 9px;
+  text-align: left;
+  padding: 0 7px;
+}
+
+.board-foot-btn:hover {
+  background: var(--surface-soft);
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.side-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 6px 2px 4px;
+}
+
 /* ---------------------------------------------------------------- sidebar */
 .sidebar {
   grid-column: 1;
@@ -949,37 +1100,65 @@ button {
 
 @media (max-width: 1150px) {
   :root {
-    --sidebar-w: 58px;
-    --inspector-w: 260px;
+    --sidebar-w: 170px;
+    --inspector-w: 250px;
   }
 
-  .side-label,
-  .tool span:not(.tool-icon),
-  .tool kbd,
-  .side-foot {
-    display: none;
-  }
-
-  .tool {
-    justify-content: center;
-    padding: 0;
-  }
-
-  .tool.active::before {
-    left: -9px;
-  }
-
-  .sidebar {
-    padding-left: 6px;
-    padding-right: 6px;
-  }
-
-  .top-actions .text-btn {
-    padding: 0 6px;
+  .board-list {
+    max-height: 150px;
   }
 }
 
 .step-add:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.step-chip {
+  font: inherit;
+  cursor: pointer;
+}
+
+.step-chip.live .step-num {
+  width: auto;
+  padding: 0 6px;
+}
+
+.step-del {
+  width: 16px;
+  height: 16px;
+  margin-left: 1px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+}
+
+.step-chip:hover .step-del,
+.step-chip.active .step-del,
+.step-del:focus-visible {
+  opacity: 1;
+}
+
+.step-del:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.board-empty {
+  padding: 8px 9px;
+  color: var(--faint);
+  font-size: 10px;
+}
+
+.live-step {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
 }

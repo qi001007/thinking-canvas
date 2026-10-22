@@ -40,13 +40,6 @@ export function createSampleProject() {
     color: POINTER_COLORS[0],
     target: { targetId: array.id, row: 0, col: 0 },
   });
-  addObject(project, "text", {
-    x: 50,
-    y: 470,
-    w: 380,
-    h: 38,
-    text: "示例只跑第一轮；点底部的 1 / 2 / 3 / 4 回看每一步，变化的格子会自动标黄。",
-  });
 
   const frames = [
     {

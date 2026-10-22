@@ -128,7 +128,7 @@ function renderDict(app, object, state, diff, editable) {
         </span>
       </div>
       <div class="card-body">
-        ${entries.length ? `<table class="dict-table"><thead><tr><th>KEY</th><th>VALUE</th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="dict-empty">空字典 · 点右上角 ＋ 加一行</div>'}
+        ${entries.length ? `<table class="dict-table"><thead><tr><th>KEY</th><th>VALUE</th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="dict-empty">空字典</div>'}
       </div>
     </div>`;
 }
@@ -210,7 +210,6 @@ function renderFunction(object, editable) {
           ${inputRows}
           <div class="function-row"><div class="k">${escapeHtml(object.output?.k || "输出")}</div><div class="v" data-edit-field="function-output" data-object-id="${object.id}">${escapeHtml(object.output?.v || "—")}</div></div>
         </div>
-        <div class="function-foot"><span>输入</span><span>输出</span><span>手动推演 · 不执行代码</span></div>
       </div>
     </div>`;
 }

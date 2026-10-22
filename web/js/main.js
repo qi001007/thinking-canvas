@@ -41,23 +41,8 @@ window.__TC_SMOKE__ = () => {
 async function boot() {
   try {
     const bridge = await createBridge();
-    let project = createProject();
-    let path = "";
-    let restored = false;
-    const fresh = new URLSearchParams(location.search).get("fresh") === "1";
-    const session = fresh ? { ok: false, empty: true } : await bridge.loadSession();
-    if (session?.ok && session.content) {
-      try {
-        project = deserializeProject(session.content);
-        path = session.path || "";
-        restored = true;
-      } catch (error) {
-        console.warn("session restore failed", error);
-      }
-    }
-    const app = new App(project, path, bridge);
-    app.start();
-    if (restored) app.toast("已恢复上次会话");
+    const app = new App(createProject(), "", bridge);
+    await app.start();
     let smoke = new URLSearchParams(location.search).get("smoke") === "1";
     if (!smoke && bridge.isDesktop) {
       try {

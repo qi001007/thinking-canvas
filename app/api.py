@@ -3,9 +3,13 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import subprocess
+import sys
 import tempfile
 import threading
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -45,10 +49,12 @@ def _valid_project_json(text: str) -> None:
 class FileApi:
     """Methods called from JS as ``window.pywebview.api.<name>(...)``."""
 
-    def __init__(self, data_dir: Path | None = None) -> None:
+    def __init__(self, data_dir: Path | None = None, boards_dir: Path | None = None) -> None:
         self.window = None
         self.data_dir = data_dir
         self.folder = Path(data_dir) if data_dir else None
+        self.boards_folder = Path(boards_dir) if boards_dir else None
+        self._boards_ready = False
         self.smoke_mode = False
         self.smoke_payload: dict[str, Any] = {"ok": False, "error": "前端没有回报 smoke 结果。"}
 
@@ -102,11 +108,155 @@ class FileApi:
 
         return {
             "ok": True,
-            "version": "0.1.1",
+            "version": "0.2.0",
             "platform": platform.system(),
             "dataDir": str(self._data_dir()),
+            "boardsDir": str(self._boards_dir()),
             "smoke": self.smoke_mode,
         }
+
+    # -- boards --------------------------------------------------------
+    def _boards_dir(self) -> Path:
+        if self.boards_folder is not None:
+            folder = self.boards_folder
+        else:
+            from .paths import boards_dir
+
+            folder = boards_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        return folder
+
+    def _trash_dir(self) -> Path:
+        from .paths import trash_dir
+
+        if self.boards_folder is not None:
+            folder = self.boards_folder / ".trash"
+            folder.mkdir(parents=True, exist_ok=True)
+            return folder
+        return trash_dir()
+
+    def _inside_boards(self, path: str | Path) -> Path:
+        root = self._boards_dir().resolve()
+        file = Path(path).resolve()
+        if file.parent != root or not file.name.endswith(".tcanvas.json"):
+            raise ValueError("画板文件必须位于 boards/ 目录。")
+        return file
+
+    def _ensure_boards(self) -> None:
+        if self._boards_ready:
+            return
+        folder = self._boards_dir()
+        self._boards_ready = True
+        if any(folder.glob("*.tcanvas.json")):
+            return
+        legacy = self._session_file()
+        if not legacy.exists():
+            return
+        try:
+            payload = json.loads(legacy.read_text(encoding="utf-8"))
+            content = payload.get("content", "")
+            _valid_project_json(content)
+            data = json.loads(content)
+            if data.get("objects") or data.get("steps"):
+                title = _title_from_json(content) or "恢复的画板"
+                self.create_board(content, title)
+            legacy.unlink(missing_ok=True)
+        except Exception:
+            # Keep a legacy file untouched if it cannot be migrated safely.
+            pass
+
+    def _board_item(self, path: Path) -> dict[str, Any]:
+        try:
+            text = _read_text(path)
+            _valid_project_json(text)
+            data = json.loads(text)
+            return {
+                "path": str(path),
+                "title": str(data.get("title") or path.stem),
+                "updatedAt": str(data.get("updatedAt") or ""),
+                "mtime": path.stat().st_mtime,
+                "size": path.stat().st_size,
+                "invalid": False,
+            }
+        except Exception:
+            return {
+                "path": str(path),
+                "title": path.stem,
+                "updatedAt": "",
+                "mtime": path.stat().st_mtime if path.exists() else 0,
+                "size": path.stat().st_size if path.exists() else 0,
+                "invalid": True,
+            }
+
+    def boards_info(self) -> dict[str, Any]:
+        try:
+            return {"ok": True, "dir": str(self._boards_dir())}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def list_boards(self) -> dict[str, Any]:
+        try:
+            self._ensure_boards()
+            files = sorted(
+                self._boards_dir().glob("*.tcanvas.json"),
+                key=lambda path: path.stat().st_mtime,
+                reverse=True,
+            )
+            return {"ok": True, "dir": str(self._boards_dir()), "items": [self._board_item(path) for path in files]}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc), "items": []}
+
+    def create_board(self, content: str, title: str = "未命名画板") -> dict[str, Any]:
+        try:
+            _valid_project_json(content)
+            self._ensure_boards()
+            path = self._boards_dir() / f"board-{uuid.uuid4().hex[:8]}.tcanvas.json"
+            _atomic_write(path, content)
+            return {"ok": True, "path": str(path), "item": self._board_item(path)}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def save_board(self, path: str, content: str) -> dict[str, Any]:
+        try:
+            _valid_project_json(content)
+            file = self._inside_boards(path)
+            _atomic_write(file, content)
+            return {"ok": True, "path": str(file), "item": self._board_item(file)}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def load_board(self, path: str) -> dict[str, Any]:
+        try:
+            file = self._inside_boards(path)
+            text = _read_text(file)
+            _valid_project_json(text)
+            return {"ok": True, "path": str(file), "content": text}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def delete_board(self, path: str) -> dict[str, Any]:
+        try:
+            file = self._inside_boards(path)
+            if not file.exists():
+                return {"ok": False, "error": "画板文件不存在。"}
+            target = self._trash_dir() / f"{int(time.time() * 1000)}-{file.name}"
+            shutil.move(str(file), str(target))
+            return {"ok": True, "trash": str(target)}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def open_boards_folder(self) -> dict[str, Any]:
+        try:
+            folder = str(self._boards_dir())
+            if os.name == "nt":
+                os.startfile(folder)  # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", folder])
+            else:
+                subprocess.Popen(["xdg-open", folder])
+            return {"ok": True}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
 
     # -- dialogs -------------------------------------------------------
     def _dialog(self, kind: int, **kwargs):
@@ -255,3 +405,5 @@ def _title_from_json(text: str) -> str:
         return str(title)[:80] if title else ""
     except Exception:
         return ""
+
+

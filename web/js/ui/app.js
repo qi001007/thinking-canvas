@@ -11,26 +11,26 @@ import {
   nextPointerName,
   removeObject,
   setPointerState,
-  STATE_KINDS,
 } from "../core/model.js";
-import { entriesToText, gridToText, parseEntries, parseGrid, parseSet, setToText } from "../core/parse.js";
+import { parseEntries, parseGrid, parseSet } from "../core/parse.js";
 import { createSampleProject } from "../core/sample.js";
-import { deserializeProject, projectFileName, serializeProject, projectStats } from "../core/serialize.js";
+import { deserializeProject, serializeProject } from "../core/serialize.js";
 import { recordStep as captureStep, deleteStep as removeStep, stepForId, stepIndex } from "../core/steps.js";
 import * as Geometry from "../core/geometry.js";
 import { Canvas } from "./canvas.js";
 import { Timeline } from "./timeline.js";
 import { Inspector } from "./inspector.js";
 import { QuickAdd } from "./quickadd.js";
-import { debounce, el, escapeHtml, isTypingTarget } from "./dom.js";
+import { BoardsPanel } from "./boards.js";
+import { debounce, el, isTypingTarget } from "./dom.js";
 import { hydrateIcons, icon } from "./icons.js";
 
 const TOOL_HINTS = {
-  select: "拖动对象移动；拖空白处框选；双击格子或文字编辑。",
-  hand: "按住拖动平移画布；滚轮缩放。",
-  connector: "从一个格子或对象拖到另一个格子或对象，建立连线。",
-  pen: "按住拖动自由绘制；Esc 取消。",
-  rect: "拖动画一个矩形；按住 Shift 可画正方形。",
+  select: "拖动移动 · 双击编辑 · 拖空白处框选",
+  hand: "拖动平移",
+  connector: "从格子或卡片拖到另一处",
+  pen: "拖动绘制",
+  rect: "拖动绘制",
 };
 
 export class App {
@@ -52,9 +52,11 @@ export class App {
     this.dirty = false;
     this.saveError = null;
     this.changeSeq = 0;
-    this.autosave = debounce(() => this.runAutosave(), 650);
+    this.autosave = debounce(() => this.runAutosave(), 500);
     this.contextMenu = null;
     this.menuOutside = null;
+    this.boards = [];
+    this.boardsDir = "";
     this.root = document.getElementById("app");
     this.titleInput = document.getElementById("doc-title");
     this.saveStateEl = document.getElementById("save-state");
@@ -63,22 +65,53 @@ export class App {
     this.recordBtn = document.getElementById("btn-record");
     this.statusHint = document.getElementById("status-hint");
     this.helpModal = document.getElementById("help-modal");
-    this.openMenuEl = document.getElementById("open-menu");
     this.canvas = new Canvas(this);
     this.timeline = new Timeline(this);
     this.inspector = new Inspector(this);
     this.quickAdd = new QuickAdd(this);
+    this.boardsPanel = new BoardsPanel(this);
     this.bindUI();
     this.bindShortcuts();
   }
 
-  start() {
+  async start() {
     hydrateIcons();
     this.undoBtn.innerHTML = icon("undo");
     this.redoBtn.innerHTML = icon("redo");
-    this.loadProject(this.project, this.path, { fit: true });
+    await this.loadBoardsAndOpen();
+    this.renderAll();
+    this.canvas.fit();
+    this.syncChrome();
     window.__TC_READY__ = true;
     window.__TC__ = this;
+  }
+
+  async loadBoardsAndOpen() {
+    const info = await this.bridge.boardsInfo();
+    this.boardsDir = info?.dir || "";
+    await this.refreshBoards();
+    if (!this.boards.length) {
+      await this.createBoard({ silent: true });
+      return;
+    }
+    const target = this.boards[0];
+    const result = await this.bridge.loadBoard(target.path);
+    if (!result?.ok) {
+      await this.createBoard({ silent: true });
+      return;
+    }
+    try {
+      this.loadProject(deserializeProject(result.content), target.path, { fit: true, autosave: false });
+    } catch {
+      await this.createBoard({ silent: true });
+    }
+  }
+
+  async refreshBoards() {
+    const result = await this.bridge.listBoards();
+    this.boards = result?.items || [];
+    if (result?.dir) this.boardsDir = result.dir;
+    this.boardsPanel.render(this.boards, this.path, this.boardsDir);
   }
 
   // ------------------------------------------------------------- rendering
@@ -136,6 +169,7 @@ export class App {
 
   // ------------------------------------------------------------- dirty / save
   markDirty() {
+    this.project.updatedAt = new Date().toISOString();
     this.dirty = true;
     this.changeSeq += 1;
     this.saveError = null;
@@ -149,6 +183,7 @@ export class App {
 
   async runAutosave() {
     const seq = this.changeSeq;
+    const boardPath = this.path;
     let content;
     try {
       content = serializeProject(this.project);
@@ -157,8 +192,18 @@ export class App {
       this.syncChrome();
       return;
     }
-    const result = await this.bridge.saveSession(content, this.path || "");
+    const result = boardPath
+      ? await this.bridge.saveBoard(boardPath, content)
+      : await this.bridge.createBoard(content, this.project.title);
     if (result?.ok) {
+      if (this.path === boardPath || !boardPath) {
+        this.path = result.path;
+        const item = result.item;
+        const existing = this.boards.find((board) => board.path === this.path);
+        if (item && existing) Object.assign(existing, item);
+        else if (item) this.boards.unshift(item);
+        this.boardsPanel.render(this.boards, this.path, this.boardsDir);
+      }
       if (seq === this.changeSeq) this.dirty = false;
       this.saveError = null;
     } else {
@@ -167,81 +212,95 @@ export class App {
     this.syncChrome();
   }
 
-  async saveProject() {
-    let content;
+  async saveCurrent(notify = false) {
+    this.changeSeq += 1;
+    await this.runAutosave();
+    if (notify && !this.saveError) this.toast("已保存");
+  }
+
+  uniqueBoardTitle() {
+    const base = "新画板";
+    const used = new Set(this.boards.map((board) => board.title));
+    let index = 1;
+    while (used.has(`${base} ${index}`)) index += 1;
+    return `${base} ${index}`;
+  }
+
+  async createBoard(options = {}) {
+    this.autosave.cancel();
+    const project = createProject(this.uniqueBoardTitle());
+    const content = serializeProject(project);
+    const result = await this.bridge.createBoard(content, project.title);
+    if (!result?.ok) {
+      this.toast(result?.error || "新建画板失败");
+      return false;
+    }
+    this.loadProject(project, result.path, { fit: true, autosave: false });
+    await this.refreshBoards();
+    this.renderAll();
+    this.canvas.fit();
+    if (!options.silent) this.titleInput.select();
+    return true;
+  }
+
+  async newBoard() {
+    await this.runAutosave();
+    await this.createBoard();
+  }
+
+  async loadBoard(path) {
+    if (!path || path === this.path) return;
+    this.autosave.cancel();
+    await this.runAutosave();
+    const result = await this.bridge.loadBoard(path);
+    if (!result?.ok) {
+      this.toast(result?.error || "打开画板失败");
+      return;
+    }
     try {
-      content = serializeProject(this.project);
+      this.loadProject(deserializeProject(result.content), path, { fit: true, autosave: false });
+      await this.refreshBoards();
     } catch (error) {
-      this.toast(`保存失败：${error.message}`);
-      return;
-    }
-    if (!this.path) {
-      await this.saveProjectAs(content);
-      return;
-    }
-    const result = await this.bridge.saveProject(this.path, content);
-    if (result?.ok) {
-      this.path = result.path;
-      this.dirty = false;
-      this.syncChrome();
-      this.toast("已保存到文件");
-    } else if (!result?.canceled) {
-      this.toast(`保存失败：${result?.error || "未知错误"}`);
+      this.toast(error.message || "画板内容损坏");
     }
   }
 
-  async saveProjectAs(content = null) {
-    if (content === null) {
-      try {
-        content = serializeProject(this.project);
-      } catch (error) {
-        this.toast(`保存失败：${error.message}`);
-        return;
+  async deleteBoard(path) {
+    const board = this.boards.find((item) => item.path === path);
+    if (!board) return;
+    if (!window.confirm(`删除「${board.title}」？\n文件会移到 boards/.trash。`)) return;
+    this.autosave.cancel();
+    if (path === this.path) await this.runAutosave();
+    const result = await this.bridge.deleteBoard(path);
+    if (!result?.ok) {
+      this.toast(result?.error || "删除失败");
+      return;
+    }
+    if (path === this.path) {
+      const next = this.boards.find((item) => item.path !== path);
+      if (next) {
+        const loaded = await this.bridge.loadBoard(next.path);
+        if (loaded?.ok) {
+          this.loadProject(deserializeProject(loaded.content), next.path, { fit: true, autosave: false });
+        } else {
+          await this.createBoard({ silent: true });
+        }
+      } else {
+        await this.createBoard({ silent: true });
       }
     }
-    const result = await this.bridge.saveProjectAs(content, projectFileName(this.project.title));
-    if (result?.ok) {
-      this.path = result.path;
-      this.dirty = false;
-      this.syncChrome();
-      this.toast("已保存到文件");
-    } else if (!result?.canceled) {
-      this.toast(`保存失败：${result?.error || "未知错误"}`);
-    }
+    await this.refreshBoards();
+    this.renderAll();
+    this.toast("已移到 .trash");
   }
 
-  async openProject() {
-    const result = await this.bridge.openProject();
-    if (!result?.ok) {
-      if (!result?.canceled && result?.error) this.toast(`打开失败：${result.error}`);
-      return;
-    }
-    try {
-      const project = deserializeProject(result.content);
-      this.loadProject(project, result.path || "", { fit: true });
-      this.toast("项目已打开");
-    } catch (error) {
-      this.toast(`文件未加载：${error.message}`);
-    }
-  }
-
-  async openRecent(path) {
-    const result = await this.bridge.openRecent(path);
-    if (!result?.ok) {
-      if (result?.error) this.toast(`打开失败：${result.error}`);
-      return;
-    }
-    try {
-      const project = deserializeProject(result.content);
-      this.loadProject(project, result.path || path, { fit: true });
-      this.hideOpenMenu();
-      this.toast("项目已打开");
-    } catch (error) {
-      this.toast(`文件未加载：${error.message}`);
-    }
+  async openBoardsFolder() {
+    const result = await this.bridge.openBoardsFolder();
+    if (!result?.ok) this.toast(result?.error || "无法打开画板文件夹");
   }
 
   loadProject(project, path = "", options = {}) {
+    this.autosave.cancel();
     this.project = project;
     this.path = path || "";
     this.history.reset();
@@ -255,32 +314,40 @@ export class App {
     if (options.fit !== false) this.canvas.fit();
     else this.canvas.setViewport({ x: 80, y: 60, zoom: 1 });
     this.syncChrome();
-    this.changeSeq += 1;
-    this.autosave();
+    this.boardsPanel.render(this.boards, this.path, this.boardsDir);
   }
 
-  newProject() {
-    if (this.project.objects.length && !window.confirm("当前画板有内容，确定新建吗？自动保存的会话也会被替换。")) return;
-    this.loadProject(createProject(), "", { fit: true });
+  async loadSample() {
+    this.autosave.cancel();
+    const sample = createSampleProject();
+    const emptyCurrent = !this.project.objects.length && !this.project.steps.length && this.boards.length <= 1 && this.path;
+    if (emptyCurrent) {
+      const saved = await this.bridge.saveBoard(this.path, serializeProject(sample));
+      if (saved?.ok) {
+        this.loadProject(sample, this.path, { fit: true, autosave: false });
+        await this.refreshBoards();
+        this.setTool("select", false);
+        return;
+      }
+    }
+    const result = await this.bridge.createBoard(serializeProject(sample), sample.title);
+    if (!result?.ok) {
+      this.toast(result?.error || "示例创建失败");
+      return;
+    }
+    this.loadProject(sample, result.path, { fit: true, autosave: false });
+    await this.refreshBoards();
     this.setTool("select", false);
-    this.toast("新画板已创建");
-  }
-
-  loadSample() {
-    if (this.project.objects.length && !window.confirm("当前画板有内容，确定打开示例吗？自动保存的会话也会被替换。")) return;
-    this.loadProject(createSampleProject(), "", { fit: true });
-    this.setTool("select", false);
-    this.toast("示例已打开：点底部时间线回看每一步");
   }
 
   // ------------------------------------------------------------- steps
   recordStep() {
     if (this.ui.viewStepId) {
-      this.toast("回到当前才能记录新的一步。");
+      this.toast("只读");
       return;
     }
     if (!this.project.objects.length) {
-      this.toast("先放一个数据结构，再记录。");
+      this.toast("先放数据");
       return;
     }
     this.history.push(this.project);
@@ -304,7 +371,6 @@ export class App {
     this.ui.selection.clear();
     this.ui.cellSelection = null;
     this.renderAll();
-    this.toast("回到当前，可以继续修改。");
   }
 
   goPrevious() {
@@ -325,13 +391,15 @@ export class App {
   }
 
   deleteStep(stepId) {
-    if (!stepId) return;
+    const step = stepForId(this.project, stepId);
+    if (!step) return;
+    if (!window.confirm(`删除「${step.title}」？`)) return;
     this.history.push(this.project);
     removeStep(this.project, stepId);
     if (this.ui.viewStepId === stepId) this.ui.viewStepId = null;
     this.markDirty();
     this.renderAll();
-    this.toast("这一步已删除");
+    this.toast("已删除 · Ctrl+Z 撤销");
   }
 
   // ------------------------------------------------------------- tools / objects
@@ -346,11 +414,10 @@ export class App {
 
   addObject(kind) {
     if (this.ui.viewStepId) {
-      this.toast("正在查看历史步骤，回到当前才能添加对象。");
+      this.toast("只读");
       return;
     }
     const app = this;
-    const requestedKind = kind;
     const nameKind = kind === "matrix" ? "array" : kind === "invariant" ? "sticky" : kind;
     const viewportRect = this.canvas.viewportEl.getBoundingClientRect();
     const center = Geometry.screenToWorld(this.ui.viewport, viewportRect.width / 2, viewportRect.height / 2);
@@ -400,7 +467,7 @@ export class App {
       kind = "sticky";
       options.name = "不变量";
     } else if (kind === "text") {
-      options.text = "写一句说明…";
+      options.text = "";
       width = 220;
       height = 40;
     } else if (kind === "function") {
@@ -425,20 +492,6 @@ export class App {
     this.markDirty();
     this.renderAll();
     this.canvas.ensureVisible(Geometry.objectBounds(object, this.project.live));
-    const messages = {
-      array: "数组已添加：双击格子输入，或从 Excel 粘贴整块。",
-      matrix: "二维数组已添加：双击格子输入，适合 DP 表。",
-      list: "列表已添加：双击每一项改值。",
-      dict: "字典已添加：双击 key / value 改值。",
-      set: "集合已添加：点右上角 ＋ 加一项。",
-      variable: "变量已添加：双击值直接改。",
-      node: "节点已添加：复制节点并用连线摆链表或树。",
-      sticky: "便签已添加：双击文字编辑。",
-      text: "文字已添加：双击编辑。",
-      function: "函数卡已添加：双击签名或输入改内容。",
-      invariant: "不变量便签已添加：双击文字编辑。",
-    };
-    this.toast(messages[requestedKind] || messages[kind] || "已添加");
   }
 
   pointerTargetFromSelection() {
@@ -455,12 +508,12 @@ export class App {
 
   addPointerAtSelection() {
     if (this.ui.viewStepId) {
-      this.toast("正在查看历史步骤，回到当前才能加指针。");
+      this.toast("只读");
       return;
     }
     const target = this.pointerTargetFromSelection();
     if (!target) {
-      this.toast("先选中一个数组格子、列表项、字典行、节点或变量。");
+      this.toast("先选一个位置");
       return;
     }
     const app = this;
@@ -474,7 +527,6 @@ export class App {
     this.ui.selection.add(pointer.id);
     this.markDirty();
     this.renderAll();
-    this.toast(`指针 ${pointer.name} 已加上；拖它可以换指向。`);
   }
 
   openQuickAdd(objectId) {
@@ -507,7 +559,6 @@ export class App {
     this.clampLivePointers();
     this.markDirty();
     this.renderAll();
-    this.toast("内容已填入");
   }
 
   // ------------------------------------------------------------- array ops
@@ -534,7 +585,7 @@ export class App {
 
   resizeArray(objectId, action) {
     if (this.ui.viewStepId) {
-      this.toast("正在查看历史步骤，回到当前才能修改。");
+      this.toast("只读");
       return;
     }
     const state = this.project.live.states[objectId];
@@ -565,7 +616,7 @@ export class App {
   markSelection(mark) {
     const selection = this.ui.cellSelection;
     if (!selection) {
-      this.toast("先在数组上拖选格子。");
+      this.toast("先选格子");
       return;
     }
     const state = this.project.live.states[selection.objectId];
@@ -601,7 +652,7 @@ export class App {
     }
     navigator.clipboard
       .writeText(text)
-      .then(() => this.toast("已复制选区"))
+      .then(() => this.toast("已复制"))
       .catch(() => this.toast("浏览器不允许写剪贴板"));
   }
 
@@ -667,7 +718,6 @@ export class App {
     this.markDirty();
     this.renderAll();
     this.canvas.ensureVisible(Geometry.objectBounds(object, this.project.live));
-    this.toast("已从剪贴板创建数组");
   }
 
   // ------------------------------------------------------------- list / dict / set
@@ -768,7 +818,7 @@ export class App {
   // ------------------------------------------------------------- selection ops
   duplicateSelection() {
     if (this.ui.viewStepId) {
-      this.toast("正在查看历史步骤，回到当前才能复制。");
+      this.toast("只读");
       return;
     }
     const ids = Array.from(this.ui.selection).filter((id) => {
@@ -788,7 +838,6 @@ export class App {
     this.renderAll();
     const first = copies.length ? Geometry.objectBounds(getObject(this.project, copies[0]), this.project.live) : null;
     this.canvas.ensureVisible(first);
-    this.toast("已复制");
   }
 
   bringToFront(id) {
@@ -811,7 +860,7 @@ export class App {
 
   deleteSelection() {
     if (this.ui.viewStepId) {
-      this.toast("正在查看历史步骤，回到当前才能删除。");
+      this.toast("只读");
       return;
     }
     if (this.ui.cellSelection) {
@@ -890,23 +939,18 @@ export class App {
     const stack = document.getElementById("toast-stack");
     const node = el("div", { class: "toast" }, message);
     stack.append(node);
-    while (stack.children.length > 2) stack.firstElementChild.remove();
+    while (stack.children.length > 1) stack.firstElementChild.remove();
     setTimeout(() => {
       node.classList.add("out");
-      setTimeout(() => node.remove(), 220);
-    }, 2400);
+      setTimeout(() => node.remove(), 180);
+    }, 1600);
   }
 
   // ------------------------------------------------------------- UI binding
   bindUI() {
     this.undoBtn.addEventListener("click", () => this.undo());
     this.redoBtn.addEventListener("click", () => this.redo());
-    document.getElementById("btn-save").addEventListener("click", () => this.saveProject());
     document.getElementById("btn-record").addEventListener("click", () => this.recordStep());
-    document.getElementById("btn-open").addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.toggleOpenMenu();
-    });
     document.getElementById("btn-help").addEventListener("click", () => this.openHelp());
     document.getElementById("help-close").addEventListener("click", () => this.closeHelp());
     this.helpModal.addEventListener("pointerdown", (event) => {
@@ -926,7 +970,6 @@ export class App {
       }
       const add = event.target.closest("[data-add]")?.dataset.add;
       if (add) this.addObject(add);
-      if (event.target.closest("#btn-sample")) this.loadSample();
     });
     document.getElementById("empty-sample").addEventListener("click", () => this.loadSample());
     document.querySelectorAll("#empty-state [data-add]").forEach((button) => {
@@ -936,56 +979,6 @@ export class App {
     document.getElementById("btn-zoom-out").addEventListener("click", () => this.canvas.zoomBy(1 / 1.2));
     document.getElementById("btn-zoom-reset").addEventListener("click", () => this.canvas.resetZoom());
     document.getElementById("btn-fit").addEventListener("click", () => this.canvas.fit());
-    document.addEventListener("click", () => this.hideOpenMenu());
-    this.openMenuEl.addEventListener("click", (event) => event.stopPropagation());
-    this.canvas.viewportEl.addEventListener("pointerdown", () => this.hideOpenMenu());
-  }
-
-  toggleOpenMenu() {
-    if (!this.openMenuEl.hidden) {
-      this.hideOpenMenu();
-      return;
-    }
-    this.openMenuEl.innerHTML = `
-      <button class="menu-item" data-menu="new">新建画板<span class="menu-key">Ctrl+N</span></button>
-      <button class="menu-item" data-menu="open">打开文件…<span class="menu-key">Ctrl+O</span></button>
-      <button class="menu-item" data-menu="save-as">另存为…<span class="menu-key">Ctrl+Shift+S</span></button>
-      <button class="menu-item" data-menu="sample">打开示例：冒泡排序</button>
-      <div class="menu-sep"></div>
-      <div class="menu-label">最近文件</div>
-      <div class="recent-slot"><div class="menu-empty">加载中…</div></div>`;
-    this.openMenuEl.hidden = false;
-    this.openMenuEl.querySelector("[data-menu='new']").addEventListener("click", () => {
-      this.hideOpenMenu();
-      this.newProject();
-    });
-    this.openMenuEl.querySelector("[data-menu='open']").addEventListener("click", () => {
-      this.hideOpenMenu();
-      this.openProject();
-    });
-    this.openMenuEl.querySelector("[data-menu='save-as']").addEventListener("click", () => {
-      this.hideOpenMenu();
-      this.saveProjectAs();
-    });
-    this.openMenuEl.querySelector("[data-menu='sample']").addEventListener("click", () => {
-      this.hideOpenMenu();
-      this.loadSample();
-    });
-    this.bridge.getRecent().then((result) => {
-      const slot = this.openMenuEl.querySelector(".recent-slot");
-      if (!slot) return;
-      const items = result?.items || [];
-      slot.innerHTML = items.length
-        ? items.map((item) => `<button class="recent-item" data-path="${escapeHtml(item.path)}"><b>${escapeHtml(item.title || "未命名画板")}</b><span>${escapeHtml(item.path)}</span></button>`).join("")
-        : '<div class="menu-empty">暂无最近文件</div>';
-      slot.querySelectorAll("[data-path]").forEach((button) => {
-        button.addEventListener("click", () => this.openRecent(button.dataset.path));
-      });
-    });
-  }
-
-  hideOpenMenu() {
-    this.openMenuEl.hidden = true;
   }
 
   openHelp() {
@@ -1003,8 +996,7 @@ export class App {
       const mod = event.ctrlKey || event.metaKey;
       if (mod && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        if (event.shiftKey) this.saveProjectAs();
-        else this.saveProject();
+        this.saveCurrent(true);
         return;
       }
       if (mod && event.key === "Enter") {
@@ -1012,14 +1004,9 @@ export class App {
         this.recordStep();
         return;
       }
-      if (mod && event.key.toLowerCase() === "o") {
-        event.preventDefault();
-        this.openProject();
-        return;
-      }
       if (mod && event.key.toLowerCase() === "n") {
         event.preventDefault();
-        this.newProject();
+        this.newBoard();
         return;
       }
       if (typing) {
@@ -1070,6 +1057,7 @@ export class App {
       if (event.key === "Delete" || event.key === "Backspace") {
         event.preventDefault();
         if (this.ui.cellSelection) this.canvas.clearSelectedCells();
+        else if (this.ui.viewStepId) this.deleteStep(this.ui.viewStepId);
         else this.deleteSelection();
         return;
       }

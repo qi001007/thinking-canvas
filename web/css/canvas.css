@@ -842,14 +842,6 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-.function-foot {
-  margin-top: 8px;
-  font-size: 9px;
-  color: var(--faint);
-  display: flex;
-  gap: 10px;
-}
-
 /* ------------------------------------------------------------------- shape */
 .shape-card {
   border: 1.5px solid var(--muted);

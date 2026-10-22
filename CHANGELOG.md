@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 · 2026-10-22
+
+- Board sidebar: list, create, switch, delete and open the boards folder.
+- Board files now live in a single `boards/` folder next to the app; deleted boards move to `boards/.trash/`.
+- Removed scattered open/save dialogs and the recent-files menu; the current board auto-saves.
+- Steps can be deleted from the timeline chip or with Delete while viewing a step.
+- Reduced interface copy: shorter empty state, inspector and status hints; toasts only for errors and key actions.
+- Added a concise front-end design spec.
+- Tabs stay crisp at native 100% (v0.1.1 behavior retained).
+
 ## 0.1.1 · 2026-10-22
 
 - Keep fit-to-canvas at or below 100%, so small boards no longer open at 133% and look soft.
