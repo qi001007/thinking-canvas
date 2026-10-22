@@ -1,5 +1,7 @@
 # Thinking Canvas · 算法思考画布
 
+[项目主页](https://qi001007.github.io/thinking-canvas/) · [GitHub](https://github.com/qi001007/thinking-canvas) · [Releases](https://github.com/qi001007/thinking-canvas/releases/latest)
+
 [![CI](https://github.com/qi001007/thinking-canvas/actions/workflows/ci.yml/badge.svg)](https://github.com/qi001007/thinking-canvas/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2f5d8a.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/qi001007/thinking-canvas?color=2f5d8a)](https://github.com/qi001007/thinking-canvas/releases)
