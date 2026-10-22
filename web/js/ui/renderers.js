@@ -224,7 +224,7 @@ function renderShape(object, editable) {
 function renderPen(object, bounds) {
   if (!bounds) return "";
   const points = (object.points || []).map(([x, y]) => `${x - bounds.x},${y - bounds.y}`).join(" ");
-  return `<svg class="pen-svg" width="${bounds.w}" height="${bounds.h}" viewBox="0 0 ${bounds.w} ${bounds.h}" data-object-id="${object.id}" data-pen="1"><polyline points="${points}" fill="none" stroke="${escapeHtml(object.color || "#364b60")}" stroke-width="${object.width || 2}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<svg class="pen-svg" width="${bounds.w}" height="${bounds.h}" viewBox="0 0 ${bounds.w} ${bounds.h}" data-object-id="${object.id}" data-pen="1"><polyline class="pen-line" points="${points}" fill="none" stroke="${escapeHtml(object.color || "#364b60")}" stroke-width="${object.width || 2}" stroke-linecap="round" stroke-linejoin="round"/><polyline class="pen-hit" points="${points}" fill="none" stroke="transparent" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 function titleHTML(kind, object, editable) {

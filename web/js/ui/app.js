@@ -32,6 +32,7 @@ const TOOL_HINTS = {
   connector: "从格子或卡片拖到另一处",
   pen: "拖动绘制",
   rect: "拖动绘制",
+  eraser: "点击或拖过笔迹/连线擦除",
 };
 
 export class App {
@@ -866,6 +867,15 @@ export class App {
     this.renderAll();
   }
 
+  setPenColor(objectId, color) {
+    const object = getObject(this.project, objectId);
+    if (!object || object.kind !== "pen" || object.color === color) return;
+    this.history.push(this.project);
+    object.color = color;
+    this.markDirty();
+    this.renderAll();
+  }
+
   // ------------------------------------------------------------- selection ops
   duplicateSelection() {
     if (this.ui.viewStepId) {
@@ -1130,7 +1140,7 @@ export class App {
         return;
       }
       const key = event.key.toLowerCase();
-      const tools = { v: "select", h: "hand", c: "connector", p: "pen", r: "rect" };
+      const tools = { v: "select", h: "hand", c: "connector", p: "pen", r: "rect", e: "eraser" };
       if (tools[key]) {
         event.preventDefault();
         this.setTool(tools[key]);

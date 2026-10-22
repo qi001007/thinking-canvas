@@ -4,6 +4,7 @@ const PATHS = {
   connector: '<path d="M4 19L20 5M13 5h7v7"/>',
   pen: '<path d="M4 20l4-1 10-10-3-3L5 16l-1 4z"/><path d="M14 6l3 3"/>',
   rect: '<rect x="4" y="5" width="16" height="14" rx="2"/>',
+  eraser: '<path d="M4 16l8-8 6 6-4 4H7l-3-2z"/><path d="M9 11l6 6"/><path d="M4 20h16"/>',
   array: '<rect x="3" y="8" width="18" height="8" rx="2"/><path d="M9 8v8M15 8v8"/>',
   matrix: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/>',
   list: '<rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/>',

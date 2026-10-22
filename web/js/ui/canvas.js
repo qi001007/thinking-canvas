@@ -20,6 +20,7 @@ import {
   nextPointerColor,
   nextPointerName,
   POINTER_COLORS,
+  removeObject,
   setPointerState,
   STATE_KINDS,
 } from "../core/model.js";
@@ -52,6 +53,7 @@ export class Canvas {
       shapeDraft: null,
       connectorDraft: null,
       pointerDrag: null,
+      erasing: null,
       pan: null,
       spaceDown: false,
       cellEdit: null,
@@ -122,6 +124,7 @@ export class Canvas {
     }
     this.viewportEl.classList.toggle("readonly", !this.editable);
     this.viewportEl.classList.toggle("hand", app.ui.tool === "hand" || this.canvasState.spaceDown);
+    this.viewportEl.classList.toggle("eraser", app.ui.tool === "eraser");
   }
 
   applyViewport() {
@@ -403,13 +406,17 @@ export class Canvas {
       return;
     }
     if (event.button !== 0) return;
-    if (target.closest(".wire.hit")) return;
 
     const tool = this.app.ui.tool;
-    if (!this.editable && ["pen", "rect", "connector"].includes(tool)) {
+    if (!this.editable && ["pen", "rect", "connector", "eraser"].includes(tool)) {
       this.app.toast("只读");
       return;
     }
+    if (tool === "eraser") {
+      this.startErase(event);
+      return;
+    }
+    if (target.closest(".wire.hit")) return;
     if (tool === "pen") {
       this.startPen(event);
       return;
@@ -440,6 +447,10 @@ export class Canvas {
 
   onPointerMove(event) {
     const state = this.canvasState;
+    if (state.erasing) {
+      this.eraseAt(event);
+      return;
+    }
     if (state.pan) {
       const dx = event.clientX - state.pan.startX;
       const dy = event.clientY - state.pan.startY;
@@ -489,6 +500,7 @@ export class Canvas {
     if (state.connectorDraft) this.finishConnector(event);
     if (state.penDraft) this.finishPen(event);
     if (state.shapeDraft) this.finishShape(event);
+    if (state.erasing) state.erasing = null;
   }
 
   // ------------------------------------------------------------- pan / zoom
@@ -1059,6 +1071,30 @@ export class Canvas {
   }
 
   // ------------------------------------------------------------- pen / shape
+  startErase(event) {
+    this.canvasState.erasing = { pushed: false };
+    this.eraseAt(event);
+    event.preventDefault();
+  }
+
+  eraseAt(event) {
+    const element = document.elementFromPoint(event.clientX, event.clientY);
+    const wire = element?.closest?.("[data-connector-id]");
+    const wrapper = element?.closest?.(".obj[data-object-id]");
+    const id = wire?.dataset.connectorId || wrapper?.dataset.objectId;
+    if (!id) return;
+    const object = getObject(this.app.project, id);
+    if (!object || (object.kind !== "pen" && object.kind !== "connector")) return;
+    if (!this.canvasState.erasing?.pushed) {
+      this.app.history.push(this.app.project);
+      if (this.canvasState.erasing) this.canvasState.erasing.pushed = true;
+    }
+    removeObject(this.app.project, object.id);
+    this.app.ui.selection.delete(object.id);
+    this.app.markDirty();
+    this.app.renderAll();
+  }
+
   startPen(event) {
     const point = this.worldPoint(event);
     this.canvasState.penDraft = { points: [[point.x, point.y]], last: this.eventPoint(event) };
@@ -1247,6 +1283,18 @@ export class Canvas {
         { label: "复制选区", action: () => this.app.copySelectedCells() },
         { label: "粘贴", action: () => this.app.pasteIntoSelection() },
         { label: "清空内容", action: () => this.clearSelectedCells() },
+      ]);
+      return;
+    }
+    const wireEl = event.target.closest("[data-connector-id]");
+    if (wireEl) {
+      const id = wireEl.dataset.connectorId;
+      this.app.ui.selection.clear();
+      this.app.ui.selection.add(id);
+      this.app.ui.cellSelection = null;
+      this.app.selectionChanged();
+      this.app.showContextMenu(event.clientX, event.clientY, [
+        { label: "删除连线", danger: true, action: () => this.app.deleteSelection() },
       ]);
       return;
     }

@@ -8,3 +8,5 @@
 - 启动错误层必须保留 `[hidden] { display:none }`；否则会变成全屏空白遮罩。
 - 窗口保持不透明 `background_color`；删掉它会走透明 WebView2 合成，显卡上可能明显变慢。
 - 正常窗口启动时短暂置顶，`__TC_READY__` 后取消置顶；否则打包版的 WebView2 API 注入会被未激活窗口拖慢。
+- 2026-10-23：版本号升到 0.3.7。
+- `FileApi` 的非方法状态必须以下划线开头；pywebview 会递归枚举公开属性，公开 `window` 会让它走进 WebView2 原生图并卡住 API 注入。

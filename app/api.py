@@ -51,10 +51,11 @@ class FileApi:
     """Methods called from JS as ``window.pywebview.api.<name>(...)``."""
 
     def __init__(self, data_dir: Path | None = None, boards_dir: Path | None = None) -> None:
-        self.window = None
-        self.data_dir = data_dir
-        self.folder = Path(data_dir) if data_dir else None
-        self.boards_folder = Path(boards_dir) if boards_dir else None
+        # pywebview enumerates public js_api attributes; keep non-method state
+        # private or it recursively walks the native Window/Path graphs.
+        self._window = None
+        self._folder = Path(data_dir) if data_dir else None
+        self._boards_override = Path(boards_dir) if boards_dir else None
         self._boards_ready = False
         self.smoke_mode = False
         self.smoke_payload: dict[str, Any] = {"ok": False, "error": "前端没有回报 smoke 结果。"}
@@ -86,13 +87,13 @@ class FileApi:
         return {"ok": True}
 
     def attach(self, window) -> None:
-        self.window = window
+        self._window = window
 
     # -- paths ---------------------------------------------------------
     def _data_dir(self) -> Path:
-        if self.folder is not None:
-            self.folder.mkdir(parents=True, exist_ok=True)
-            return self.folder
+        if self._folder is not None:
+            self._folder.mkdir(parents=True, exist_ok=True)
+            return self._folder
         from .paths import app_data_dir
 
         return app_data_dir()
@@ -112,7 +113,7 @@ class FileApi:
 
         return {
             "ok": True,
-            "version": "0.3.6",
+            "version": "0.3.7",
             "platform": platform.system(),
             "dataDir": str(self._data_dir()),
             "boardsDir": str(self._boards_dir()),
@@ -146,8 +147,8 @@ class FileApi:
 
     # -- boards --------------------------------------------------------
     def _boards_dir(self) -> Path:
-        if self.boards_folder is not None:
-            folder = self.boards_folder
+        if self._boards_override is not None:
+            folder = self._boards_override
         else:
             from .paths import boards_dir
 
@@ -158,8 +159,8 @@ class FileApi:
     def _trash_dir(self) -> Path:
         from .paths import trash_dir
 
-        if self.boards_folder is not None:
-            folder = self.boards_folder / ".trash"
+        if self._boards_override is not None:
+            folder = self._boards_override / ".trash"
             folder.mkdir(parents=True, exist_ok=True)
             return folder
         return trash_dir()
@@ -303,9 +304,9 @@ class FileApi:
 
     # -- dialogs -------------------------------------------------------
     def _dialog(self, kind: int, **kwargs):
-        if self.window is None:
+        if self._window is None:
             raise RuntimeError("桌面窗口尚未就绪。")
-        return self.window.create_file_dialog(kind, **kwargs)
+        return self._window.create_file_dialog(kind, **kwargs)
 
     # -- project files -------------------------------------------------
     def open_project(self) -> dict[str, Any]:

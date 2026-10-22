@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.7 · 2026-10-23
+
+- Pen strokes get a 16px invisible hit area, so clicking a thin stroke selects it.
+- Add an eraser (`E`): click or drag over pen strokes and connectors to erase them.
+- Selected pen strokes can change color and width in the inspector, or be deleted with Delete / right-click.
+- Connectors get a wider hit area, Delete support, and a right-click “删除连线” menu.
+- Smoke now draws a pen stroke, checks the 16px hit band, erases it, and verifies the object is gone.
+- Fix intermittent “desktop bridge not ready” startup hangs: pywebview recursively enumerated public non-method attributes of `FileApi`, including the native Window graph. Non-method state is now private, so API injection completes immediately.
+
 ## 0.3.6 · 2026-10-23
 
 - Restore the opaque `background_color` window; removing it during the blank-window diagnosis made WebView2 use a transparent composition path, which can make drawing/labels noticeably slower on some GPUs.

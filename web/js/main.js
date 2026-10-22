@@ -68,6 +68,27 @@ window.__TC_SMOKE__ = async () => {
         quickPreview.includes("行") &&
         pointersAfter === pointersBefore + 1,
     );
+    const viewport = app.ui.viewport;
+    const pen = addObject(app.project, "pen", {
+      points: [
+        [(80 - viewport.x) / viewport.zoom, (120 - viewport.y) / viewport.zoom],
+        [(180 - viewport.x) / viewport.zoom, (160 - viewport.y) / viewport.zoom],
+      ],
+    });
+    app.renderAll();
+    const penHit = document.querySelector(`.pen-svg[data-object-id="${pen.id}"] .pen-hit`);
+    const hitWidth = Number(penHit?.getAttribute("stroke-width") || 0);
+    const middle = penHit ? penHit.getPointAtLength(penHit.getTotalLength() / 2) : null;
+    const matrix = penHit?.ownerSVGElement.getScreenCTM();
+    const screenPoint = middle && matrix ? new DOMPoint(middle.x, middle.y).matrixTransform(matrix) : null;
+    if (screenPoint) app.canvas.eraseAt({ clientX: screenPoint.x, clientY: screenPoint.y });
+    const eraserOk = Boolean(
+      document.querySelector('[data-tool="eraser"]') &&
+        penHit &&
+        hitWidth >= 16 &&
+        screenPoint &&
+        !app.project.objects.some((object) => object.id === pen.id),
+    );
     return {
       ok:
         Boolean(document.getElementById("app")) &&
@@ -82,6 +103,7 @@ window.__TC_SMOKE__ = async () => {
         !duplicateRecord &&
         bootOverlayHidden &&
         cardActionsOk &&
+        eraserOk &&
         Boolean(document.getElementById("board-search")) &&
         Boolean(document.getElementById("status-float")),
       dpr: window.devicePixelRatio,
@@ -97,6 +119,7 @@ window.__TC_SMOKE__ = async () => {
       duplicateRecord,
       bootOverlayHidden,
       cardActions: cardActionsOk,
+      eraser: eraserOk,
     };
   } catch (error) {
     return { ok: false, error: `${error.name}: ${error.message}` };

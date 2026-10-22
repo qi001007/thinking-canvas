@@ -881,8 +881,17 @@
   cursor: grab;
 }
 
+.pen-hit {
+  pointer-events: stroke;
+  cursor: grab;
+}
+
 .obj.selected > .pen-svg {
   filter: drop-shadow(0 0 2px rgba(47, 93, 138, 0.7));
+}
+
+.viewport.eraser {
+  cursor: crosshair;
 }
 
 /* ------------------------------------------------------------------- wires */
@@ -901,7 +910,7 @@
 
 .wire.hit {
   stroke: transparent;
-  stroke-width: 12;
+  stroke-width: 16;
   pointer-events: stroke;
   cursor: pointer;
 }

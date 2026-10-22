@@ -227,7 +227,16 @@ export class Inspector {
           <div class="insp-note" style="margin-top:8px">指向：<b>${escapeHtml(label)}</b></div>
         </div>`;
     }
-    if (object.kind === "shape" || object.kind === "pen") return "";
+    if (object.kind === "pen") {
+      return `
+        <div class="insp-section">
+          <div class="insp-section-title">颜色</div>
+          <div class="swatches">${POINTER_COLORS.map((color) => `<button class="swatch" data-action="pen-color" data-color="${color}" data-object-id="${object.id}" style="background:${color}" title="${color}"></button>`).join("")}</div>
+          <div class="insp-section-title" style="margin-top:10px">粗细</div>
+          <div class="field"><select data-insp-field="pen-width" data-object-id="${object.id}">${[1, 2, 3, 4, 6].map((width) => `<option value="${width}" ${Number(object.width || 2) === width ? "selected" : ""}>${width}px</option>`).join("")}</select></div>
+        </div>`;
+    }
+    if (object.kind === "shape") return "";
     return "";
   }
 
@@ -285,6 +294,7 @@ export class Inspector {
       if (name === "sticky-text" || name === "text-content") return object.text === value;
       if (name === "function-signature") return object.signature === value;
       if (name === "function-complexity") return object.complexity === value;
+      if (name === "pen-width") return Number(object.width || 2) === Number(value);
       return false;
     };
     if (same()) return;
@@ -306,6 +316,7 @@ export class Inspector {
     else if (name === "set-item" && state) state.items[index] = value;
     else if (name === "list-item" && state) state.items[index] = value;
     else if (name === "sticky-text" || name === "text-content") object.text = value;
+    else if (name === "pen-width") object.width = Number(value) || 2;
     this.app.markDirty();
     this.app.scheduleAutosave();
     this.app.canvas.render();
@@ -336,6 +347,7 @@ export class Inspector {
     else if (action === "dict-del") app.removeDictRow(objectId);
     else if (action === "set-add") app.addSetItem(objectId);
     else if (action === "set-del") app.removeSetItem(objectId);
+    else if (action === "pen-color") app.setPenColor(objectId, event.target.dataset.color || "#364b60");
     else if (action === "function-add-input") app.addFunctionInput(objectId);
     else if (action === "mark") app.markSelection(event.target.dataset.mark || "");
     else if (action === "sticky-color") app.setStickyColor(objectId, event.target.dataset.color);
