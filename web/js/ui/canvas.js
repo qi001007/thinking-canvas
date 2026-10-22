@@ -313,6 +313,7 @@ export class Canvas {
   bindEvents() {
     const viewport = this.viewportEl;
     viewport.addEventListener("pointerdown", (event) => this.onPointerDown(event));
+    viewport.addEventListener("click", (event) => this.onCardToolClick(event));
     window.addEventListener("pointermove", (event) => this.onPointerMove(event));
     window.addEventListener("pointerup", (event) => this.onPointerUp(event));
     viewport.addEventListener("wheel", (event) => this.onWheel(event), { passive: false });
@@ -352,12 +353,43 @@ export class Canvas {
     this.zoomAt(event.clientX, event.clientY, factor);
   }
 
-  onPointerDown(event) {
-    if (event.button === 1 || this.canvasState.spaceDown || this.app.ui.tool === "hand") {
-      this.startPan(event);
+  onCardToolClick(event) {
+    const button = event.target.closest(".card-tool[data-action]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const app = this.app;
+    if (app.ui.viewStepId) {
+      app.toast("只读");
       return;
     }
-    if (event.button !== 0) return;
+    const objectId = button.dataset.objectId;
+    const action = button.dataset.action;
+    if (action === "array-pointer") {
+      if (!app.ui.cellSelection || app.ui.cellSelection.objectId !== objectId) {
+        app.ui.cellSelection = { objectId, r1: 0, c1: 0, r2: 0, c2: 0 };
+      }
+      app.addPointerAtSelection();
+      return;
+    }
+    if (action === "array-quick" || action === "dict-quick" || action === "set-quick") {
+      app.openQuickAdd(objectId);
+      return;
+    }
+    if (action === "list-add") {
+      app.addListItem(objectId);
+      return;
+    }
+    if (action === "dict-add") {
+      app.addDictRow(objectId);
+      return;
+    }
+    if (action === "set-add") {
+      app.addSetItem(objectId);
+    }
+  }
+
+  onPointerDown(event) {
     const target = event.target;
     if (
       target.closest(
@@ -366,7 +398,12 @@ export class Canvas {
     ) {
       return;
     }
-    if (event.target.closest(".wire.hit")) return;
+    if (event.button === 1 || this.canvasState.spaceDown || this.app.ui.tool === "hand") {
+      this.startPan(event);
+      return;
+    }
+    if (event.button !== 0) return;
+    if (target.closest(".wire.hit")) return;
 
     const tool = this.app.ui.tool;
     if (!this.editable && ["pen", "rect", "connector"].includes(tool)) {

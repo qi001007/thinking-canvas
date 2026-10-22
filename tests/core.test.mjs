@@ -17,7 +17,7 @@ import { deserializeProject, serializeProject } from "../web/js/core/serialize.j
 import { History } from "../web/js/core/history.js";
 import { arrayCellRect, objectBounds, snapDelta } from "../web/js/core/geometry.js";
 import { createSampleProject } from "../web/js/core/sample.js";
-import { entriesToText, gridToText, parseEntries, parseGrid, parseSet, setToText } from "../web/js/core/parse.js";
+import { entriesToText, gridToCode, gridToText, parseEntries, parseGrid, parseSet, setToText } from "../web/js/core/parse.js";
 
 function makeNumbersProject() {
   const project = createProject("测试");
@@ -177,4 +177,17 @@ test("batch input parsers handle spaces, commas, tabs and key:value lines", () =
   assert.equal(gridToText([["1", "2"]]), "1\t2");
   assert.equal(entriesToText([{ key: "a", value: "1" }]), "a: 1");
   assert.equal(setToText(["a", "b"]), "a, b");
+});
+
+test("code-like arrays support 1D, nested rows, quotes and Excel paste", () => {
+  assert.deepEqual(parseGrid("[2, 7, 11, 15]"), [["2", "7", "11", "15"]]);
+  assert.deepEqual(parseGrid("[[1, 2], [3, 4]]"), [["1", "2"], ["3", "4"]]);
+  assert.deepEqual(parseGrid("[\n [1, 2],\n [3, 4]\n]"), [["1", "2"], ["3", "4"]]);
+  assert.deepEqual(parseGrid("[1,2]\n[3,4]"), [["1", "2"], ["3", "4"]]);
+  assert.deepEqual(parseGrid('["a b", "c"]'), [["a b", "c"]]);
+  assert.deepEqual(parseGrid("1\t2\n3\t4"), [["1", "2"], ["3", "4"]]);
+  assert.equal(gridToCode([["1", "4", "2", "5"]]), "[1, 4, 2, 5]");
+  assert.equal(gridToCode([["1", "2"], ["3", "4"]]), "[[1, 2], [3, 4]]");
+  assert.equal(gridToCode([["a b", "c"]]), '["a b", c]');
+  assert.deepEqual(parseSet("{2, 7, 11}"), ["2", "7", "11"]);
 });

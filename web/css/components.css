@@ -262,7 +262,7 @@ kbd {
 /* -------------------------------------------------------------- quick add */
 .quick-add {
   position: fixed;
-  width: 320px;
+  width: min(360px, calc(100vw - 32px));
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -285,7 +285,7 @@ kbd {
 
 .quick-add textarea {
   width: 100%;
-  min-height: 62px;
+  min-height: 88px;
   resize: vertical;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -293,8 +293,20 @@ kbd {
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.6;
-  padding: 2px;
+  padding: 6px 7px;
   outline: none;
+}
+
+.quick-add-preview {
+  min-height: 14px;
+  margin-top: 5px;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.quick-add-preview .warn {
+  color: var(--red);
 }
 
 .quick-add textarea:focus {

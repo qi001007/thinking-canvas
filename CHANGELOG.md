@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 · 2026-10-22
+
+- Batch array input now uses code-like lists: `[1, 2, 3]` and `[[1, 2], [3, 4]]`, with live row/column preview and Excel TSV paste support.
+- Array cell references use explicit `N 行 × M 列` dimensions instead of the ambiguous `N × M`.
+- Wire up all card header tools: array `+i` and `⋯`, list/dict/set `+`; they now add cells/rows/items or open the batch editor.
+- Increase the smoke watchdog from 25s to 40s to absorb one-file startup variance.
+
 ## 0.3.1 · 2026-10-22
 
 - Make the example a stable board file (`boards/board-sample.tcanvas.json`): first open creates it, later opens and edits reuse the same file, and deletion is rejected.

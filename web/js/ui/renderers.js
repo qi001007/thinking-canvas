@@ -66,7 +66,7 @@ function renderArray(app, object, state, diff, editable) {
     <div class="card array-card" data-card="1">
       <div class="card-head" data-drag-handle="1">
         ${titleHTML("array", object, editable)}
-        <span class="card-meta">${rows} × ${cols}</span>
+        <span class="card-meta" title="数组尺寸">${rows} 行 × ${cols} 列</span>
         <span class="card-tools">
           <button class="card-tool" data-action="array-pointer" data-object-id="${object.id}" title="在选中的格子加指针">+i</button>
           <button class="card-tool" data-action="array-quick" data-object-id="${object.id}" title="批量输入">⋯</button>

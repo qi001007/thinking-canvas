@@ -8,6 +8,7 @@ import { createBridge } from "./ui/bridge.js";
 
 window.__TC_SMOKE__ = async () => {
   try {
+    const app = window.__TC__;
     const sample = createSampleProject();
     const restored = deserializeProject(serializeProject(sample));
     const sampleDiff = diffForView(restored, restored.steps[1].id);
@@ -47,6 +48,25 @@ window.__TC_SMOKE__ = async () => {
     );
     const sampleRow = Boolean(document.getElementById("sample-board"));
     const duplicateRecord = Boolean(document.getElementById("btn-timeline-record"));
+    app.addObject("array");
+    const arrayCard = document.querySelector(".array-card");
+    const arrayMeta = arrayCard?.querySelector(".card-meta")?.textContent || "";
+    document.querySelector('[data-action="array-quick"]')?.click();
+    const quickNode = document.querySelector(".quick-add");
+    const quickValue = quickNode?.querySelector("textarea")?.value || "";
+    const quickPreview = quickNode?.querySelector("[data-preview]")?.textContent || "";
+    quickNode?.querySelector("[data-cancel]")?.click();
+    const pointersBefore = app.project.objects.filter((object) => object.kind === "pointer").length;
+    document.querySelector('[data-action="array-pointer"]')?.click();
+    const pointersAfter = app.project.objects.filter((object) => object.kind === "pointer").length;
+    const cardActionsOk = Boolean(
+      arrayCard &&
+        arrayMeta.includes("行") &&
+        quickNode &&
+        quickValue.startsWith("[") &&
+        quickPreview.includes("行") &&
+        pointersAfter === pointersBefore + 1,
+    );
     return {
       ok:
         Boolean(document.getElementById("app")) &&
@@ -59,6 +79,7 @@ window.__TC_SMOKE__ = async () => {
         sampleOk &&
         sampleRow &&
         !duplicateRecord &&
+        cardActionsOk &&
         Boolean(document.getElementById("board-search")) &&
         Boolean(document.getElementById("status-float")),
       dpr: window.devicePixelRatio,
@@ -72,6 +93,7 @@ window.__TC_SMOKE__ = async () => {
       sampleStable: sampleOk,
       sampleDelete: sampleDelete?.ok,
       duplicateRecord,
+      cardActions: cardActionsOk,
     };
   } catch (error) {
     return { ok: false, error: `${error.name}: ${error.message}` };

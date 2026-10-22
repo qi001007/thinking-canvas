@@ -55,7 +55,7 @@ def _show_error(message: str) -> None:
 
 
 def _smoke_timeout(api: FileApi) -> None:
-    api.smoke_payload = {"ok": False, "error": "前端没有在 25 秒内回报 smoke 结果。"}
+    api.smoke_payload = {"ok": False, "error": "前端没有在 40 秒内回报 smoke 结果。"}
     api.write_smoke_payload()
     try:
         print(json.dumps(api.smoke_payload, ensure_ascii=False), flush=True)
@@ -91,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if smoke:
             api.smoke_mode = True
-            watchdog = threading.Timer(25, lambda: _smoke_timeout(api))
+            watchdog = threading.Timer(40, lambda: _smoke_timeout(api))
             watchdog.daemon = True
             watchdog.start()
             webview.start(

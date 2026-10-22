@@ -7,3 +7,4 @@
 - 2026-10-22：画板统一到应用旁 `boards/`；新增画板 API、`.trash` 删除、旧 session 迁移；版本 0.2.0。
 - 2026-10-22：新增 `boards/.ui-state.json` 与 `load_ui_state`/`save_ui_state`；版本 0.3.0；smoke 覆盖分栏与 UI 状态往返。
 - 2026-10-22：v0.3.1：`ensure_sample_board` 固定示例文件、`sample` 标记、示例防删；smoke 补示例稳定性。
+- 2026-10-22：v0.3.2：smoke 看门狗 25→40 秒，容纳单文件 exe 启动波动。
