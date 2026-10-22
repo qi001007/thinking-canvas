@@ -1,11 +1,3 @@
-function jsLog(message) {
-  const send = () => {
-    if (window.pywebview?.api?.js_log) window.pywebview.api.js_log(message).catch(() => {});
-    else setTimeout(send, 250);
-  };
-  send();
-}
-
 import { diffForView } from "./core/diff.js";
 import { addObject, createProject } from "./core/model.js";
 import { createSampleProject } from "./core/sample.js";
@@ -34,6 +26,9 @@ window.__TC_SMOKE__ = () => {
         sampleDiff.hasChanges &&
         diff.hasChanges &&
         diff.cells.size === 1,
+      dpr: window.devicePixelRatio,
+      inner: [window.innerWidth, window.innerHeight],
+      screen: [screen.width, screen.height],
       sampleSteps: restored.steps.length,
       sampleChanges: sampleDiff.count,
       editedChanges: diff.count,
@@ -44,10 +39,8 @@ window.__TC_SMOKE__ = () => {
 };
 
 async function boot() {
-  jsLog("page loaded");
   try {
     const bridge = await createBridge();
-    jsLog(`bridge=${bridge.isDesktop ? "desktop" : "browser"} chromeWebview=${Boolean(window.chrome?.webview)}`);
     let project = createProject();
     let path = "";
     let restored = false;
@@ -64,7 +57,6 @@ async function boot() {
     }
     const app = new App(project, path, bridge);
     app.start();
-    jsLog("app started");
     if (restored) app.toast("已恢复上次会话");
     let smoke = new URLSearchParams(location.search).get("smoke") === "1";
     if (!smoke && bridge.isDesktop) {
@@ -74,10 +66,8 @@ async function boot() {
         smoke = false;
       }
     }
-    jsLog(`smoke=${smoke}`);
     if (smoke) {
       const result = window.__TC_SMOKE__();
-      jsLog(`smoke result ok=${result.ok}`);
       if (window.pywebview?.api?.smoke_report) await window.pywebview.api.smoke_report(result);
       else console.log("smoke", result);
     }

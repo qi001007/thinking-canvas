@@ -224,7 +224,7 @@ export function fitBounds(bounds, viewportWidth, viewportHeight, padding = 90) {
   if (!bounds) return { x: 0, y: 0, zoom: 1 };
   const zoom = Math.max(
     0.25,
-    Math.min(1.6, Math.min((viewportWidth - padding * 2) / Math.max(1, bounds.w), (viewportHeight - padding * 2) / Math.max(1, bounds.h))),
+    Math.min(1.0, Math.min((viewportWidth - padding * 2) / Math.max(1, bounds.w), (viewportHeight - padding * 2) / Math.max(1, bounds.h))),
   );
   return {
     zoom,

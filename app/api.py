@@ -102,7 +102,7 @@ class FileApi:
 
         return {
             "ok": True,
-            "version": "0.1.0",
+            "version": "0.1.1",
             "platform": platform.system(),
             "dataDir": str(self._data_dir()),
             "smoke": self.smoke_mode,

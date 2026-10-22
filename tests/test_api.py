@@ -74,5 +74,5 @@ def test_app_info_reports_data_dir(tmp_path):
     api = FileApi(data_dir=tmp_path)
     info = api.app_info()
     assert info["ok"] is True
-    assert info["version"] == "0.1.0"
+    assert info["version"] == "0.1.1"
     assert info["dataDir"] == str(tmp_path)

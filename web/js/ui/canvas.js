@@ -242,7 +242,7 @@ export class Canvas {
       return;
     }
     const rect = this.viewportEl.getBoundingClientRect();
-    const next = fitBounds(bounds, rect.width || 1000, rect.height || 700, 110);
+    const next = fitBounds(bounds, rect.width || 1000, rect.height || 700, 90);
     this.setViewport(next);
   }
 
