@@ -74,7 +74,7 @@ def test_app_info_reports_data_dir(tmp_path):
     api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
     info = api.app_info()
     assert info["ok"] is True
-    assert info["version"] == "0.2.0"
+    assert info["version"] == "0.2.1"
     assert info["dataDir"] == str(tmp_path)
 
 
@@ -118,4 +118,18 @@ def test_legacy_session_is_removed_after_empty_migration(tmp_path):
     legacy.write_text(json.dumps({"content": json.dumps(project_json(), ensure_ascii=False)}), encoding="utf-8")
     listed = api.list_boards()
     assert listed["ok"] is True
+    assert legacy.exists() is False
+
+def test_legacy_session_migrates_even_when_boards_exist(tmp_path):
+    seed = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
+    seed.create_board(json.dumps(project_json("已有画板"), ensure_ascii=False), "已有画板")
+    legacy_data = project_json("旧画板")
+    legacy_data["objects"] = [{"id": "legacy", "kind": "text"}]
+    legacy = tmp_path / "session.json"
+    legacy.write_text(json.dumps({"content": json.dumps(legacy_data, ensure_ascii=False)}, ensure_ascii=False), encoding="utf-8")
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
+    listed = api.list_boards()
+    titles = [item["title"] for item in listed["items"]]
+    assert "旧画板" in titles
+    assert "已有画板" in titles
     assert legacy.exists() is False

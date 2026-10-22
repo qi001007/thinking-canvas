@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 · 2026-10-22
+
+- Migrate a legacy `%APPDATA%/ThinkingCanvas/session.json` even when `boards/` already contains boards, so an old in-progress board is not stranded outside the unified folder.
+
 ## 0.2.0 · 2026-10-22
 
 - Board sidebar: list, create, switch, delete and open the boards folder.

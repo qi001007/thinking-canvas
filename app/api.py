@@ -108,7 +108,7 @@ class FileApi:
 
         return {
             "ok": True,
-            "version": "0.2.0",
+            "version": "0.2.1",
             "platform": platform.system(),
             "dataDir": str(self._data_dir()),
             "boardsDir": str(self._boards_dir()),
@@ -145,10 +145,8 @@ class FileApi:
     def _ensure_boards(self) -> None:
         if self._boards_ready:
             return
-        folder = self._boards_dir()
+        self._boards_dir()
         self._boards_ready = True
-        if any(folder.glob("*.tcanvas.json")):
-            return
         legacy = self._session_file()
         if not legacy.exists():
             return
