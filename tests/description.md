@@ -1,3 +1,3 @@
 # tests 目录说明
 
-`test_core.py` 检查 TSV 扩展与原值保留、副本隔离、单元格锚点跟随、撤销快照隔离和 JSON 往返/坏锚点拒绝。真实 Tk smoke 通过 `python src/main.py --smoke` 执行。
+`core.test.mjs` 用 Node 内置 test runner 覆盖模型、快照、差异、撤销重做、序列化、几何、吸附和批量输入解析；`test_api.py` 用 pytest 覆盖项目保存/打开/最近文件/会话自动保存/坏输入拒绝。真实窗口验收走 `python app/shell.py --smoke`，不在 pytest 里启动 GUI。

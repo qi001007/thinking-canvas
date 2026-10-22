@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Thinking Canvas · 算法思考画布</title>
+  <meta name="description" content="在写代码之前，把算法摆在一张画布上想清楚：数据卡片、步骤快照、自动差异、指针。Windows 桌面小工具，不执行代码，本地保存。">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top">
+      <span class="brand-mark"><span></span></span>
+      <span>Thinking Canvas</span>
+    </a>
+    <nav>
+      <a href="#features">功能</a>
+      <a href="#how">怎么用</a>
+      <a href="#download">下载</a>
+      <a href="https://github.com/qi001007/thinking-canvas" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">WINDOWS · LOCAL-FIRST · MIT</div>
+        <h1>写代码之前，<br><em>先把算法想清楚。</em></h1>
+        <p class="lead">把输入输出、数据结构、指针和每一步的变化摆在一张画布上。工具不执行代码，也不替你决定算法。</p>
+        <div class="actions">
+          <a class="btn primary" href="https://github.com/qi001007/thinking-canvas/releases/latest">下载 Windows 版</a>
+          <a class="btn" href="https://github.com/qi001007/thinking-canvas">查看源码</a>
+        </div>
+        <div class="hero-notes">
+          <span>普通 JSON 项目</span>
+          <span>自动保存</span>
+          <span>不联网</span>
+        </div>
+      </div>
+      <div class="shot-wrap">
+        <div class="shot">
+          <div class="shot-bar"><i></i><i></i><i></i><b>Thinking Canvas</b></div>
+          <img src="hero.png" alt="Thinking Canvas 正在回看冒泡排序第 2 步，变化的格子自动标黄">
+        </div>
+        <div class="shot-tag"><span></span>第 2 步 · 自动标出 3 处变化</div>
+      </div>
+    </section>
+
+    <section class="statement">
+      <p>纸上的推演有效，但<strong>重复劳动</strong>太多：重画数组、搬指针、擦掉上一步、找不到哪里变了。</p>
+      <p>自动可视化工具擅长演示已知算法，却不适合<strong>设计自己的函数</strong>。所以这里保留自由画布，只把“状态”和“步骤”做成积木。</p>
+    </section>
+
+    <section class="section" id="features">
+      <div class="section-head">
+        <div class="eyebrow">FEATURES</div>
+        <h2>不是动画播放器，<br>是一张能回看的思考草稿。</h2>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <div class="card-kicker">01 / 数据卡片</div>
+          <h3>用格子，而不是手画框</h3>
+          <p>数组、二维数组、列表/栈、字典、集合、变量、节点。带下标、可编辑、可批量粘贴，尺寸由数据决定。</p>
+        </article>
+        <article class="card">
+          <div class="card-kicker">02 / 步骤快照</div>
+          <h3>记录一步，而不是重画一遍</h3>
+          <p>当前状态始终可编辑；点一下记录，时间线保存这一步。前后翻看，历史步骤只读。</p>
+        </article>
+        <article class="card">
+          <div class="card-kicker">03 / 自动差异</div>
+          <h3>这一步变了什么，不用自己找</h3>
+          <p>相邻两步逐格比较：变化的格子标黄，变量标黄，指针移动在差异摘要里写清楚。</p>
+        </article>
+        <article class="card">
+          <div class="card-kicker">04 / 指针</div>
+          <h3>i、j、left、right 拖到格子上</h3>
+          <p>指针吸附目标、带描边，位置随步骤保存。翻回第 2 步，它就回到第 2 步的位置。</p>
+        </article>
+        <article class="card">
+          <div class="card-kicker">05 / 函数与不变量</div>
+          <h3>把“要什么”和“为什么”留在画布上</h3>
+          <p>函数卡写签名、输入输出、复杂度目标；绿色便签写循环不变量。翻步骤时一直可见。</p>
+        </article>
+        <article class="card">
+          <div class="card-kicker">06 / 桌面本地</div>
+          <h3>双击即用，项目就在本机</h3>
+          <p>pywebview + WebView2，约 12.8 MB。普通 JSON 文件，自动保存上次会话，不联网、不上传。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section how" id="how">
+      <div class="section-head">
+        <div class="eyebrow">30 SECONDS</div>
+        <h2>三步开始推演</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="num">1</span>
+          <h3>放数据</h3>
+          <p>点“数组”，双击格子输入 <code>2 7 11 15</code>；或把整块从 Excel 粘进来。</p>
+        </div>
+        <div class="step">
+          <span class="num">2</span>
+          <h3>加指针，改状态</h3>
+          <p>右键格子“加指针”，拖动指针换位置；改值、加字典项、移动节点。</p>
+        </div>
+        <div class="step">
+          <span class="num">3</span>
+          <h3>记录，回看</h3>
+          <p>按 <kbd>Ctrl</kbd> + <kbd>Enter</kbd> 记录一步。点底部时间线回看，变化的格子自动标黄。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section split">
+      <div>
+        <div class="eyebrow">WHAT IT DOESN'T DO</div>
+        <h2>刻意不做的事</h2>
+      </div>
+      <ul class="not-list">
+        <li>不执行你的代码，不读取变量，不做自动追踪。</li>
+        <li>不预置算法模板，不替你选算法。</li>
+        <li>不自动布局链表/树/图；节点和连线由你摆。</li>
+        <li>不上传项目，不做账号、云同步、遥测。</li>
+      </ul>
+    </section>
+
+    <section class="download" id="download">
+      <div>
+        <div class="eyebrow">GET IT</div>
+        <h2>把它放到手边。</h2>
+        <p>Windows 10/11。需要 Microsoft Edge WebView2 Runtime（通常已预装）。源码运行需要 Python 3.11+。</p>
+      </div>
+      <div class="download-actions">
+        <a class="btn primary" href="https://github.com/qi001007/thinking-canvas/releases/latest">下载最新 Release</a>
+        <a class="btn" href="https://github.com/qi001007/thinking-canvas#从源码运行">从源码运行</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="foot-brand">
+      <span class="brand-mark"><span></span></span>
+      <span>Thinking Canvas</span>
+    </div>
+    <p>MIT License · 独立实现，参考 <a href="https://github.com/pjwang2022/trace-by-hand-whiteboard" target="_blank" rel="noreferrer">trace-by-hand-whiteboard</a> 的功能方向，未复制其代码。</p>
+    <p><a href="https://github.com/qi001007/thinking-canvas">GitHub</a> · <a href="https://github.com/qi001007/thinking-canvas/blob/main/docs/技术文档.md">技术文档</a></p>
+  </footer>
+</body>
+</html>

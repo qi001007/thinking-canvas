@@ -1,0 +1,78 @@
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from app.api import FileApi  # noqa: E402
+
+
+def project_json(title="测试画板"):
+    return {
+        "schemaVersion": 1,
+        "title": title,
+        "createdAt": "2026-10-22T00:00:00.000Z",
+        "updatedAt": "2026-10-22T00:00:00.000Z",
+        "objects": [],
+        "live": {"states": {}, "pointers": {}},
+        "steps": [],
+    }
+
+
+def test_save_open_and_recent(tmp_path):
+    api = FileApi(data_dir=tmp_path)
+    path = tmp_path / "board.tcanvas.json"
+    content = json.dumps(project_json("两数之和"), ensure_ascii=False)
+    result = api.save_project(str(path), content)
+    assert result["ok"] is True
+    assert result["path"] == str(path)
+    assert path.read_text(encoding="utf-8") == content
+
+    recent = api.get_recent()
+    assert recent["ok"] is True
+    assert recent["items"][0]["title"] == "两数之和"
+
+    opened = api.open_recent(str(path))
+    assert opened["ok"] is True
+    assert opened["content"] == content
+    assert not list(tmp_path.glob(".thinking-canvas-*.tmp"))
+
+
+def test_session_roundtrip_and_clear(tmp_path):
+    api = FileApi(data_dir=tmp_path)
+    content = json.dumps(project_json(), ensure_ascii=False)
+    assert api.save_session(content, "x.tcanvas.json")["ok"] is True
+    loaded = api.load_session()
+    assert loaded["ok"] is True
+    assert loaded["content"] == content
+    assert loaded["path"] == "x.tcanvas.json"
+    assert api.clear_session()["ok"] is True
+    assert api.load_session()["empty"] is True
+
+
+def test_invalid_content_is_rejected_without_overwriting(tmp_path):
+    api = FileApi(data_dir=tmp_path)
+    path = tmp_path / "board.tcanvas.json"
+    path.write_text("keep me", encoding="utf-8")
+    result = api.save_project(str(path), "{not json")
+    assert result["ok"] is False
+    assert path.read_text(encoding="utf-8") == "keep me"
+    assert api.load_session()["ok"] is False
+
+
+def test_save_session_rejects_wrong_shape(tmp_path):
+    api = FileApi(data_dir=tmp_path)
+    result = api.save_session(json.dumps({"objects": []}), "")
+    assert result["ok"] is False
+    assert api.load_session()["empty"] is True
+
+
+def test_app_info_reports_data_dir(tmp_path):
+    api = FileApi(data_dir=tmp_path)
+    info = api.app_info()
+    assert info["ok"] is True
+    assert info["version"] == "0.1.0"
+    assert info["dataDir"] == str(tmp_path)

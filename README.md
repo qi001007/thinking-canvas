@@ -1,25 +1,138 @@
-# 思考画布（Thinking Canvas）
+# Thinking Canvas · 算法思考画布
 
-思考画布是一张通用的数字格子纸：把数据放进可编辑表格，再用文字、形状、线条和箭头整理任意算法或问题的输入、中间状态与输出。软件不会预设算法，也不会执行用户输入。首次打开是空白画布。
+[![CI](https://github.com/qi001007/thinking-canvas/actions/workflows/ci.yml/badge.svg)](https://github.com/qi001007/thinking-canvas/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2f5d8a.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/qi001007/thinking-canvas?color=2f5d8a)](https://github.com/qi001007/thinking-canvas/releases)
 
-## 启动与使用
+在写代码之前，把算法摆在一张画布上想清楚：函数要什么输入输出、数据怎么变、指针走到哪、这一步和上一步差在哪。
 
-双击项目根目录的 [ThinkingCanvas.exe](E:/算法思考工具/ThinkingCanvas.exe) 即可使用，无需安装 Python。当前单文件包大小为 10,418,704 字节。源码运行可双击 `start.cmd` 或使用 `python src/main.py`。`python src/main.py --smoke` 启动 Tk 窗口、检查空白项目和基本操作后退出；此模式不依赖截图库。
+![Thinking Canvas](screenshots/hero.png)
 
-打包环境为保留的 `.build-env`。以下 PyInstaller 命令使用 onefile、windowed 模式，将 `src` 加入模块搜索路径，并显式携带 Tcl/Tk 和 OpenSSL DLL：
+> 它不执行代码，也不替你选算法。它只负责让你已经在纸上做的推演变快、变清楚、可回看。
+
+## 为什么做这个
+
+- **纸上推演**：数组、指针、交换、擦掉重画；步骤一多就找不到“上一步是什么”。
+- **自动可视化工具**：擅长演示已知算法，但不适合设计自己的函数；布局也是它替你决定。
+- **Thinking Canvas**：保留自由画布，同时把“函数、状态、步骤、差异、指针”做成可操作的积木。
+
+## 功能
+
+- **数据卡片**：数组 / 二维数组、列表 / 栈、字典、集合、变量、节点、便签、函数卡。
+- **步骤快照**：点“记录一步”保存当前状态；底部时间线前后翻看，历史步骤只读。
+- **自动差异**：与上一步相比，变化的格子标黄、变量标黄、指针移动会提示。
+- **指针**：`i` / `j` / `left` / `right` 拖到格子上就吸附；位置随步骤保存。
+- **不变量**：绿色便签固定在一旁；函数卡写签名、输入、输出和复杂度目标。
+- **自由标注**：连线、矩形、画笔、文字；支持缩放、平移、框选、多选、吸附参考线、撤销/重做。
+- **本地优先**：项目是普通 JSON；自动保存上次会话；Windows 桌面应用，不联网、不上传。
+
+## 30 秒上手
+
+1. 点“数组”，双击格子输入 `2 7 11 15`；也可以把一串值直接粘进去。
+2. 选中一个格子，右键“加指针”，或拖一个指针胶囊到格子上。
+3. 按 `Ctrl+Enter` 记录一步；改几个值、移动指针，再记录一步。
+4. 点底部时间线回看；变了的格子会自动标黄。点“回到当前”继续编辑。
+
+选中格子时字母键用于输入；按 `Esc` 退出格子选择后，`V` / `H` / `A` / `D` 等单字母快捷键恢复。
+
+## 快捷键
+
+| 操作 | 快捷键 |
+|---|---|
+| 选择 / 抓手 / 连线 / 画笔 / 矩形 | `V` / `H` / `C` / `P` / `R` |
+| 数组 / 二维数组 / 列表 / 字典 / 集合 / 节点 / 函数卡 | `A` / `M` / `L` / `D` / `S` / `N` / `F` |
+| 记录一步 | `Ctrl+Enter` |
+| 上一步 / 下一步 | `Ctrl+←` / `Ctrl+→` |
+| 撤销 / 重做 | `Ctrl+Z` / `Ctrl+Y` |
+| 复制 / 删除 | `Ctrl+D` / `Delete` |
+| 缩放 / 适应画布 | `+` / `−` / `Ctrl+0` |
+| 临时抓手 / 帮助 | `Space` / `?` |
+
+## 下载与运行
+
+### Windows 桌面版
+
+从 [Releases](https://github.com/qi001007/thinking-canvas/releases/latest) 下载 `ThinkingCanvas.exe`，双击即可。需要 Microsoft Edge WebView2 Runtime；Windows 10/11 通常已预装。
+
+### 从源码运行
 
 ```powershell
-.build-env\Scripts\python.exe -m PyInstaller --noconfirm --clean --onefile --windowed --name ThinkingCanvas --paths src --add-binary "E:/Anaconda/Library/bin/tk86t.dll;." --add-binary "E:/Anaconda/Library/bin/tcl86t.dll;." --add-binary "E:/Anaconda/Library/bin/libcrypto-1_1-x64.dll;." src/main.py
+python -m pip install -r requirements.txt
+python app\shell.py
 ```
 
-顶部可新建、打开、保存、撤销和重做，使用 `Ctrl+S` 保存 JSON 项目。插入表格后双击单元格或选中后按 Enter 编辑；Tab 前进一格。拖动可框选，区域支持着色和 TSV 复制粘贴，也可从 Excel 直接粘贴。表格可独立复制，标题双击改名、拖动标题移动。文字、直线、箭头、矩形、椭圆和画笔通过工具栏直接点击或拖动创建。箭头端点可以吸附到格子，移动表格时跟随。中键拖动画布或使用滚动条浏览。
+也可以双击 `run.cmd`（源码）或 `start.cmd`（优先使用旁边的 `ThinkingCanvas.exe`）。
 
-表格值按纯文本保存，不会自动计算。新建、打开或关闭时，未保存修改会询问是否保存。
+### 构建 exe
 
-## 项目结构
+PyInstaller 需要在构建环境里安装 `pywebview` 和 `pyinstaller`：
 
-- `src/`：Tkinter 应用和 JSON 模型。
-- `tests/`：核心数据操作测试。
-- `docs/`：需求、技术、进度、反馈和编码原则。
-- `screenshots/`：本轮通用界面截图。
-- `.history/`：上一版具体算法/高斯示例方案归档，不是当前设计。
+```powershell
+python -m PyInstaller --noconfirm --clean --onefile --windowed --name ThinkingCanvas `
+  --icon app/app.ico --add-data "web;web" app/shell.py
+```
+
+本机 Anaconda 环境还需要显式带上 OpenSSL / libffi DLL（PyInstaller 找不到时）：
+
+```powershell
+--add-binary "<Anaconda>/Library/bin/libcrypto-1_1-x64.dll;." `
+--add-binary "<Anaconda>/Library/bin/libssl-1_1-x64.dll;." `
+--add-binary "<Anaconda>/Library/bin/ffi.dll;."
+```
+
+`scripts/build_exe.py` 会自动查找当前 Python 前缀下的这些 DLL。
+
+## 测试
+
+```powershell
+node --test tests/core.test.mjs
+python -m pytest tests/test_api.py -q
+python app\shell.py --smoke
+```
+
+- Node 测试覆盖模型、快照、差异、序列化、几何、批量输入解析。
+- Python 测试覆盖项目文件、会话自动保存、最近文件和坏输入拒绝。
+- `--smoke` 用真实 WebView2 启动，前端跑完断言后通过 Python API 回报；窗口版 exe 的结果会写到 `%APPDATA%\ThinkingCanvas\smoke.json`。
+
+## 架构
+
+```
+app/            pywebview 桌面壳：窗口、原生文件对话框、原子写入、会话
+web/
+  index.html    单页界面
+  css/          设计变量、布局、画布、控件
+  js/core/      纯数据层：模型、步骤、差异、几何、持久化（无 DOM）
+  js/ui/        渲染、交互、时间线、检查器、快捷键
+tests/          核心测试与文件 API 测试
+docs/           需求、技术、决策、进度、反馈、编码原则
+site/           GitHub Pages 项目主页
+```
+
+核心层不碰 DOM，UI 层不自己维护第二份状态；快照只记录数据卡片和指针，画布布局和标注是持久对象。详细设计见 [技术文档](docs/技术文档.md) 和 [决策记录](docs/决策.md)。
+
+## 明确不做
+
+- 不执行用户代码、不自动追踪 Python 变量、不读取内存。
+- 不自动布局树/图，不预置算法模板。
+- 不做账号、云同步、多人协作。
+- 不收集遥测。
+
+## 路线图
+
+- 分支时间线：从任意一步复制出新尝试并并排比较。
+- 伪代码面板：步骤绑定代码行，翻步骤时高亮对应行。
+- 更多数据结构：链表/树/图的专用节点与自动布局（可选）。
+- 导出 PNG / SVG、双语界面、更多示例。
+- macOS / Linux 打包（pywebview 已跨平台，主要差 WebView 运行时和打包验证）。
+
+## 致谢与许可
+
+参考了 [trace-by-hand-whiteboard](https://github.com/pjwang2022/trace-by-hand-whiteboard) 作为组件广度和“画布 + 手动推演”方向的重要对照。该仓库当前没有许可证，本项目**没有复制它的代码**，是独立实现；功能取舍和交互设计由本项目自行完成。
+
+MIT License，见 [LICENSE](LICENSE)。
+
+---
+
+### English summary
+
+Thinking Canvas is a local Windows desktop canvas for **designing algorithms before coding**. Put arrays, matrices, maps, variables, nodes and notes on an infinite canvas; drag pointers onto cells; record snapshots; flip through the timeline; changed cells are highlighted automatically. It does not execute code, choose algorithms, or auto-layout your data. Projects are plain JSON; everything stays on your machine. Built with Python + pywebview and a framework-free JavaScript front end. MIT licensed.

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <title>Thinking Canvas</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/canvas.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">Thinking Canvas</span>
+      </div>
+      <div class="doc">
+        <input id="doc-title" class="doc-title" value="未命名画板" aria-label="画板标题" spellcheck="false">
+        <span id="save-state" class="save-state">已自动保存</span>
+      </div>
+      <div class="top-actions">
+        <button id="btn-undo" class="icon-btn" title="撤销 (Ctrl+Z)" aria-label="撤销" disabled></button>
+        <button id="btn-redo" class="icon-btn" title="重做 (Ctrl+Y)" aria-label="重做" disabled></button>
+        <span class="top-sep"></span>
+        <button id="btn-open" class="text-btn" title="打开项目 (Ctrl+O)">打开</button>
+        <button id="btn-save" class="text-btn" title="保存项目 (Ctrl+S)">保存</button>
+        <button id="btn-record" class="primary-btn" title="记录当前状态为一步 (Ctrl+Enter)">
+          <span class="record-dot" aria-hidden="true"></span>
+          记录一步
+          <kbd>Ctrl↵</kbd>
+        </button>
+        <button id="btn-help" class="icon-btn help-btn" title="快捷键与上手说明" aria-label="帮助">?</button>
+      </div>
+      <div id="open-menu" class="menu open-menu" hidden></div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" id="sidebar">
+        <div class="side-group">
+          <div class="side-label">工具</div>
+          <button class="tool" data-tool="select" title="选择 (V)"><span class="tool-icon" data-icon="select"></span><span>选择</span><kbd>V</kbd></button>
+          <button class="tool" data-tool="hand" title="移动画布 (H / 空格)"><span class="tool-icon" data-icon="hand"></span><span>抓手</span><kbd>H</kbd></button>
+          <button class="tool" data-tool="connector" title="连线 (C)"><span class="tool-icon" data-icon="connector"></span><span>连线</span><kbd>C</kbd></button>
+          <button class="tool" data-tool="pen" title="画笔 (P)"><span class="tool-icon" data-icon="pen"></span><span>画笔</span><kbd>P</kbd></button>
+          <button class="tool" data-tool="rect" title="矩形 (R)"><span class="tool-icon" data-icon="rect"></span><span>矩形</span><kbd>R</kbd></button>
+        </div>
+
+        <div class="side-group">
+          <div class="side-label">数据结构</div>
+          <button class="tool" data-add="array" title="一维数组 (A)"><span class="tool-icon" data-icon="array"></span><span>数组</span><kbd>A</kbd></button>
+          <button class="tool" data-add="matrix" title="二维数组 / DP 表 (M)"><span class="tool-icon" data-icon="matrix"></span><span>二维数组</span><kbd>M</kbd></button>
+          <button class="tool" data-add="list" title="列表 / 栈 / 队列"><span class="tool-icon" data-icon="list"></span><span>列表 / 栈</span></button>
+          <button class="tool" data-add="dict" title="字典 / 哈希表 (D)"><span class="tool-icon" data-icon="dict"></span><span>字典</span><kbd>D</kbd></button>
+          <button class="tool" data-add="set" title="集合 (S)"><span class="tool-icon" data-icon="set"></span><span>集合</span><kbd>S</kbd></button>
+          <button class="tool" data-add="variable" title="变量"><span class="tool-icon" data-icon="variable"></span><span>变量</span></button>
+          <button class="tool" data-add="node" title="节点：链表 / 树 / 图"><span class="tool-icon" data-icon="node"></span><span>节点</span><kbd>N</kbd></button>
+        </div>
+
+        <div class="side-group">
+          <div class="side-label">标注</div>
+          <button class="tool" data-add="sticky" title="便签"><span class="tool-icon" data-icon="sticky"></span><span>便签</span></button>
+          <button class="tool" data-add="invariant" title="不变量便签"><span class="tool-icon" data-icon="invariant"></span><span>不变量</span></button>
+          <button class="tool" data-add="text" title="纯文字"><span class="tool-icon" data-icon="text"></span><span>文字</span></button>
+          <button class="tool" data-add="function" title="函数卡：签名 / 输入 / 输出"><span class="tool-icon" data-icon="function"></span><span>函数卡</span></button>
+        </div>
+
+        <div class="side-foot">
+          <button id="btn-sample" class="ghost-btn">打开示例：冒泡排序</button>
+        </div>
+      </aside>
+
+      <main class="stage" id="stage">
+        <div class="viewport" id="viewport">
+          <div class="world" id="world"></div>
+          <svg class="wires" id="wires" aria-hidden="true"></svg>
+          <div class="pointer-layer" id="pointer-layer"></div>
+          <div class="guides" id="guides" aria-hidden="true"></div>
+          <div class="marquee" id="marquee" hidden></div>
+
+          <div class="empty-state" id="empty-state">
+            <div class="empty-card">
+              <div class="empty-kicker">THINKING CANVAS</div>
+              <h1>把你的算法想清楚，再开始写。</h1>
+              <p>把输入、数据结构、指针和每一步的变化摆在一张画布上。工具不执行代码，也不替你决定算法。</p>
+              <div class="empty-actions">
+                <button class="primary-btn" data-add="array">先放一个数组</button>
+                <button class="text-btn" id="empty-sample">看一个冒泡排序的例子</button>
+              </div>
+              <div class="empty-tips">
+                <span><b>1</b> 放数据结构</span>
+                <span><b>2</b> 拖指针、改值</span>
+                <span><b>3</b> 记录一步，回看变化</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="history-banner" id="history-banner" hidden>
+            <span class="history-dot"></span>
+            <span id="history-text">正在查看历史步骤</span>
+            <button id="btn-live" class="mini-btn">回到当前</button>
+          </div>
+
+          <div class="zoom-controls">
+            <button id="btn-zoom-out" class="zoom-btn" title="缩小 (-)">−</button>
+            <button id="btn-zoom-reset" class="zoom-value" title="重置为 100%">100%</button>
+            <button id="btn-zoom-in" class="zoom-btn" title="放大 (+)">＋</button>
+            <span class="zoom-sep"></span>
+            <button id="btn-fit" class="zoom-btn fit" title="适应画布 (Ctrl+0)">适应</button>
+          </div>
+
+          <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+        </div>
+      </main>
+
+      <aside class="inspector" id="inspector">
+        <div id="inspector-content"></div>
+      </aside>
+
+      <section class="timeline" aria-label="步骤时间线">
+        <div class="timeline-nav">
+          <button id="btn-prev-step" class="step-nav" title="上一步 (Ctrl+←)">‹</button>
+          <button id="btn-next-step" class="step-nav" title="下一步 (Ctrl+→)">›</button>
+        </div>
+        <div class="step-list" id="step-list"></div>
+        <button id="btn-timeline-record" class="step-add" title="记录当前状态 (Ctrl+Enter)">＋ 记录一步</button>
+        <div class="timeline-right">
+          <label class="diff-toggle" title="高亮与上一步相比发生变化的格子">
+            <input id="toggle-diff" type="checkbox" checked>
+            <span class="switch-track"><span></span></span>
+            <span>显示变化</span>
+          </label>
+        </div>
+      </section>
+    </div>
+
+    <footer class="statusbar">
+      <span id="status-hint">双击单元格编辑 · Tab 下一格 · Ctrl+Enter 记录一步 · 空格拖动画布</span>
+      <span class="status-right"><span id="status-objects">0 个对象</span><span id="status-zoom">100%</span></span>
+    </footer>
+  </div>
+
+  <div class="modal" id="help-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="empty-kicker">QUICK START</div>
+          <h2>30 秒上手</h2>
+        </div>
+        <button id="help-close" class="icon-btn" aria-label="关闭">×</button>
+      </div>
+      <div class="help-grid">
+        <div class="help-step"><b>1</b><div><strong>放数据</strong><p>点左边的“数组”“字典”或“节点”，双击格子直接改值。数组支持粘贴 <code>2 7 11 15</code> 或从 Excel 复制。选中格子时字母键用于输入，按 <kbd>Esc</kbd> 退出格子选择后单字母快捷键才会生效。</p></div></div>
+        <div class="help-step"><b>2</b><div><strong>放指针</strong><p>选中一个格子，点右键“加指针”，或直接拖一个 <code>i</code> 到格子上。指针会吸附住。</p></div></div>
+        <div class="help-step"><b>3</b><div><strong>记录一步</strong><p>点“记录一步”或按 <kbd>Ctrl</kbd>+<kbd>Enter</kbd>。改几个格子、移动指针，再记录下一步。</p></div></div>
+        <div class="help-step"><b>4</b><div><strong>回看变化</strong><p>点底部时间线回到任意一步；变了的格子会自动标黄。点“回到当前”继续编辑。</p></div></div>
+      </div>
+      <div class="shortcut-table">
+        <div><span>选择 / 抓手</span><kbd>V</kbd><kbd>H</kbd></div>
+        <div><span>记录一步</span><kbd>Ctrl</kbd><kbd>Enter</kbd></div>
+        <div><span>上一步 / 下一步</span><kbd>Ctrl</kbd><kbd>←</kbd><kbd>→</kbd></div>
+        <div><span>撤销 / 重做</span><kbd>Ctrl</kbd><kbd>Z</kbd><kbd>Y</kbd></div>
+        <div><span>复制对象</span><kbd>Ctrl</kbd><kbd>D</kbd></div>
+        <div><span>缩放 / 适应</span><kbd>+</kbd><kbd>−</kbd><kbd>Ctrl</kbd><kbd>0</kbd></div>
+        <div><span>删除</span><kbd>Delete</kbd></div>
+        <div><span>临时抓手</span><kbd>Space</kbd></div>
+      </div>
+      <p class="help-foot">所有数据只保存在本机。项目文件是普通 JSON，可以随时查看和备份。</p>
+    </div>
+  </div>
+
+  <div id="boot-error" class="boot-error" hidden></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
