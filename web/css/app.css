@@ -259,23 +259,6 @@ button {
   box-shadow: 0 0 0 3px rgba(246, 210, 125, 0.18);
 }
 
-.text-btn {
-  height: 31px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--muted);
-  padding: 0 9px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.text-btn:hover {
-  background: var(--surface-soft);
-  border-color: var(--line);
-  color: var(--ink);
-}
-
 .icon-btn {
   width: 31px;
   height: 31px;
@@ -671,6 +654,58 @@ body.pane-dragging .workspace * {
   background: rgba(180, 84, 84, 0.1);
 }
 
+.sample-board {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface-soft);
+  color: var(--ink-soft);
+  padding: 6px 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.sample-board:hover {
+  background: #fff;
+  border-color: var(--accent);
+}
+
+.sample-board:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.sample-board.active {
+  background: var(--accent-soft);
+  border-style: solid;
+  border-color: #d2e2f0;
+}
+
+.sample-badge {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border: 1px solid var(--amber-line);
+  border-radius: 99px;
+  background: var(--amber-soft);
+  color: #8b671e;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.sample-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .board-foot {
   flex: 0 0 auto;
   display: flex;
@@ -856,8 +891,8 @@ body.pane-dragging .workspace * {
   border-top: 1px solid var(--line);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 8px 14px;
   min-width: 0;
   z-index: 6;
 }
@@ -985,24 +1020,6 @@ body.pane-dragging .workspace * {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.24);
   color: #fff;
-}
-
-.step-add {
-  flex: 0 0 auto;
-  height: 34px;
-  border: 1px dashed var(--line-strong);
-  border-radius: 9px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 11px;
-  padding: 0 11px;
-  white-space: nowrap;
-}
-
-.step-add:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
 }
 
 .timeline-right {
@@ -1375,11 +1392,6 @@ body.pane-dragging .workspace * {
   .empty-card {
     width: min(500px, 86%);
   }
-}
-
-.step-add:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .step-chip {

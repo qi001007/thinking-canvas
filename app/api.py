@@ -15,6 +15,7 @@ from typing import Any
 
 MAX_PROJECT_BYTES = 20 * 1024 * 1024
 PROJECT_FILTERS = ("Thinking Canvas (*.tcanvas.json)", "JSON (*.json)", "All files (*.*)")
+SAMPLE_BOARD_NAME = "board-sample.tcanvas.json"
 
 
 def _atomic_write(path: Path, text: str) -> None:
@@ -111,7 +112,7 @@ class FileApi:
 
         return {
             "ok": True,
-            "version": "0.3.0",
+            "version": "0.3.1",
             "platform": platform.system(),
             "dataDir": str(self._data_dir()),
             "boardsDir": str(self._boards_dir()),
@@ -203,6 +204,7 @@ class FileApi:
                 "mtime": path.stat().st_mtime,
                 "size": path.stat().st_size,
                 "invalid": False,
+                "sample": path.name == SAMPLE_BOARD_NAME,
             }
         except Exception:
             return {
@@ -212,6 +214,7 @@ class FileApi:
                 "mtime": path.stat().st_mtime if path.exists() else 0,
                 "size": path.stat().st_size if path.exists() else 0,
                 "invalid": True,
+                "sample": path.name == SAMPLE_BOARD_NAME,
             }
 
     def boards_info(self) -> dict[str, Any]:
@@ -242,6 +245,18 @@ class FileApi:
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
+    def ensure_sample_board(self, content: str, title: str = "示例画板") -> dict[str, Any]:
+        try:
+            _valid_project_json(content)
+            self._ensure_boards()
+            path = self._boards_dir() / SAMPLE_BOARD_NAME
+            created = not path.exists()
+            if created:
+                _atomic_write(path, content)
+            return {"ok": True, "path": str(path), "created": created, "item": self._board_item(path)}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
     def save_board(self, path: str, content: str) -> dict[str, Any]:
         try:
             _valid_project_json(content)
@@ -263,6 +278,8 @@ class FileApi:
     def delete_board(self, path: str) -> dict[str, Any]:
         try:
             file = self._inside_boards(path)
+            if file.name == SAMPLE_BOARD_NAME:
+                return {"ok": False, "error": "示例画板不能删除。"}
             if not file.exists():
                 return {"ok": False, "error": "画板文件不存在。"}
             target = self._trash_dir() / f"{int(time.time() * 1000)}-{file.name}"

@@ -7,16 +7,20 @@ export class BoardsPanel {
     this.list = document.getElementById("board-list");
     this.newButton = document.getElementById("btn-new-board");
     this.folderButton = document.getElementById("btn-boards-folder");
-    this.sampleButton = document.getElementById("btn-sample");
+    this.sampleRow = document.getElementById("sample-board");
+    this.sampleTitle = document.getElementById("sample-title");
     this.searchInput = document.getElementById("board-search");
     this.searchClear = document.getElementById("board-search-clear");
     this.countEl = document.getElementById("board-count");
     this.railCount = document.getElementById("board-rail-count");
     this.boards = [];
+    this.sampleBoard = null;
     this.activePath = "";
     this.query = "";
     this.list.addEventListener("click", (event) => this.onClick(event));
     this.list.addEventListener("keydown", (event) => this.onKeyDown(event));
+    this.sampleRow.addEventListener("click", () => this.app.openSample());
+    this.sampleRow.addEventListener("keydown", (event) => this.onSampleKeyDown(event));
     this.searchInput.addEventListener("input", () => this.onSearch());
     this.searchInput.addEventListener("keydown", (event) => this.onSearchKeyDown(event));
     this.searchClear.addEventListener("click", () => {
@@ -25,14 +29,25 @@ export class BoardsPanel {
     });
     this.newButton.addEventListener("click", () => this.app.newBoard());
     this.folderButton.addEventListener("click", () => this.app.openBoardsFolder());
-    this.sampleButton.addEventListener("click", () => this.app.loadSample());
   }
 
   render(boards, activePath, dir = "") {
-    this.boards = boards || [];
+    const all = boards || [];
+    this.sampleBoard = all.find((board) => board.sample) || null;
+    this.boards = all.filter((board) => !board.sample);
     this.activePath = activePath || "";
     if (dir) this.folderButton.title = `打开 ${dir}`;
+    this.renderSample();
     this.renderList();
+  }
+
+  renderSample() {
+    const title = this.sampleBoard?.title || "冒泡排序 · 第一轮";
+    const active = Boolean(this.sampleBoard && this.sampleBoard.path === this.activePath);
+    this.sampleTitle.textContent = title;
+    this.sampleRow.classList.toggle("active", active);
+    this.sampleRow.setAttribute("aria-current", active ? "true" : "false");
+    this.sampleRow.title = this.sampleBoard ? "打开示例画板；修改会保存到同一文件" : "打开示例画板";
   }
 
   renderList() {
@@ -71,10 +86,17 @@ export class BoardsPanel {
   }
 
   updateItem(path, patch) {
-    const item = this.boards.find((board) => board.path === path);
+    const item = this.boards.find((board) => board.path === path) || (this.sampleBoard?.path === path ? this.sampleBoard : null);
     if (!item) return;
     Object.assign(item, patch);
-    this.renderList();
+    if (item === this.sampleBoard) this.renderSample();
+    else this.renderList();
+  }
+
+  onSampleKeyDown(event) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    this.app.openSample();
   }
 
   setQuery(value) {

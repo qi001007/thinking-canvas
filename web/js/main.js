@@ -34,6 +34,19 @@ window.__TC_SMOKE__ = async () => {
     const uiSaved = await bridge?.saveUiState?.({ panes: { boards: 224, tools: 112, inspector: 300 } });
     const uiAfter = await bridge?.loadUiState?.();
     const uiOk = Boolean(uiBefore?.ok && uiSaved?.ok && uiAfter?.state?.panes?.boards === 224);
+    const sampleContent = serializeProject(sample);
+    const sampleFirst = await bridge?.ensureSampleBoard?.(sampleContent, sample.title);
+    const sampleSecond = await bridge?.ensureSampleBoard?.(sampleContent, sample.title);
+    const sampleDelete = await bridge?.deleteBoard?.(sampleFirst?.path);
+    const sampleOk = Boolean(
+      sampleFirst?.ok &&
+        sampleSecond?.ok &&
+        sampleFirst.path === sampleSecond.path &&
+        sampleSecond.created === false &&
+        sampleDelete?.ok === false,
+    );
+    const sampleRow = Boolean(document.getElementById("sample-board"));
+    const duplicateRecord = Boolean(document.getElementById("btn-timeline-record"));
     return {
       ok:
         Boolean(document.getElementById("app")) &&
@@ -43,6 +56,9 @@ window.__TC_SMOKE__ = async () => {
         diff.cells.size === 1 &&
         panesOk &&
         uiOk &&
+        sampleOk &&
+        sampleRow &&
+        !duplicateRecord &&
         Boolean(document.getElementById("board-search")) &&
         Boolean(document.getElementById("status-float")),
       dpr: window.devicePixelRatio,
@@ -53,6 +69,9 @@ window.__TC_SMOKE__ = async () => {
       editedChanges: diff.count,
       panes: [boardWidth, wideBoardWidth],
       uiState: uiOk,
+      sampleStable: sampleOk,
+      sampleDelete: sampleDelete?.ok,
+      duplicateRecord,
     };
   } catch (error) {
     return { ok: false, error: `${error.name}: ${error.message}` };

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 · 2026-10-22
+
+- Make the example a stable board file (`boards/board-sample.tcanvas.json`): first open creates it, later opens and edits reuse the same file, and deletion is rejected.
+- Move the example into a fixed row in the board pane; remove the sample buttons from the footer, empty state, inspector and canvas context menu.
+- Remove the timeline “record a step” button; keep only the blue top-bar action.
+- Reduce the timeline bar from 84px to 62px.
+
 ## 0.3.0 · 2026-10-22
 
 - Split board management and tool controls into two panes, so a long board list no longer pushes tools down.

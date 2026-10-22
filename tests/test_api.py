@@ -74,7 +74,7 @@ def test_app_info_reports_data_dir(tmp_path):
     api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
     info = api.app_info()
     assert info["ok"] is True
-    assert info["version"] == "0.3.0"
+    assert info["version"] == "0.3.1"
     assert info["dataDir"] == str(tmp_path)
 
 
@@ -87,6 +87,27 @@ def test_ui_state_roundtrip_and_limits(tmp_path):
     assert api.save_ui_state([])["ok"] is False
     assert api.save_ui_state({"x": "a" * (65 * 1024)})["ok"] is False
     assert api.list_boards()["items"] == []
+
+
+def test_sample_board_is_stable_and_protected(tmp_path):
+    api = FileApi(data_dir=tmp_path, boards_dir=tmp_path / "boards")
+    first = api.ensure_sample_board(json.dumps(project_json("示例 A"), ensure_ascii=False), "示例 A")
+    assert first["ok"] is True
+    assert first["created"] is True
+    path = Path(first["path"])
+    assert path.name == "board-sample.tcanvas.json"
+    assert first["item"]["sample"] is True
+
+    second = api.ensure_sample_board(json.dumps(project_json("示例 B"), ensure_ascii=False), "示例 B")
+    assert second["ok"] is True
+    assert second["created"] is False
+    assert second["path"] == first["path"]
+    assert json.loads(path.read_text(encoding="utf-8"))["title"] == "示例 A"
+
+    listed = api.list_boards()["items"]
+    assert [item["sample"] for item in listed] == [True]
+    assert api.delete_board(str(path))["ok"] is False
+    assert path.exists()
 
 
 def test_board_crud_and_trash(tmp_path):

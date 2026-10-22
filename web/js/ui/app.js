@@ -98,11 +98,11 @@ export class App {
     const info = await this.bridge.boardsInfo();
     this.boardsDir = info?.dir || "";
     await this.refreshBoards();
-    if (!this.boards.length) {
+    const target = this.boards.find((board) => !board.sample);
+    if (!target) {
       await this.createBoard({ silent: true });
       return;
     }
-    const target = this.boards[0];
     const result = await this.bridge.loadBoard(target.path);
     if (!result?.ok) {
       await this.createBoard({ silent: true });
@@ -258,25 +258,31 @@ export class App {
   }
 
   async loadBoard(path) {
-    if (!path || path === this.path) return;
+    if (!path || path === this.path) return true;
     this.autosave.cancel();
     await this.runAutosave();
     const result = await this.bridge.loadBoard(path);
     if (!result?.ok) {
       this.toast(result?.error || "打开画板失败");
-      return;
+      return false;
     }
     try {
       this.loadProject(deserializeProject(result.content), path, { fit: true, autosave: false });
       await this.refreshBoards();
+      return true;
     } catch (error) {
       this.toast(error.message || "画板内容损坏");
+      return false;
     }
   }
 
   async deleteBoard(path) {
     const board = this.boards.find((item) => item.path === path);
     if (!board) return;
+    if (board.sample) {
+      this.toast("示例画板不能删除");
+      return;
+    }
     if (!window.confirm(`删除「${board.title}」？\n文件会移到 boards/.trash。`)) return;
     this.autosave.cancel();
     const wasActive = path === this.path;
@@ -288,7 +294,7 @@ export class App {
     }
     if (wasActive) this.boardsPanel.setQuery("");
     if (path === this.path) {
-      const next = this.boards.find((item) => item.path !== path);
+      const next = this.boards.find((item) => item.path !== path && !item.sample);
       if (next) {
         const loaded = await this.bridge.loadBoard(next.path);
         if (loaded?.ok) {
@@ -328,28 +334,39 @@ export class App {
     this.boardsPanel.render(this.boards, this.path, this.boardsDir);
   }
 
-  async loadSample() {
+  async openSample() {
     this.autosave.cancel();
-    this.boardsPanel.setQuery("");
-    const sample = createSampleProject();
-    const emptyCurrent = !this.project.objects.length && !this.project.steps.length && this.boards.length <= 1 && this.path;
-    if (emptyCurrent) {
-      const saved = await this.bridge.saveBoard(this.path, serializeProject(sample));
-      if (saved?.ok) {
-        this.loadProject(sample, this.path, { fit: true, autosave: false });
-        await this.refreshBoards();
+    if (this.path) await this.runAutosave();
+    const existing = this.boards.find((board) => board.sample);
+    if (existing) {
+      if (existing.path === this.path) {
+        this.setTool("select", false);
+        this.canvas.fit();
+        return;
+      }
+      if (await this.loadBoard(existing.path)) {
         this.setTool("select", false);
         return;
       }
     }
-    const result = await this.bridge.createBoard(serializeProject(sample), sample.title);
+    const sample = createSampleProject();
+    const result = await this.bridge.ensureSampleBoard(serializeProject(sample), sample.title);
     if (!result?.ok) {
-      this.toast(result?.error || "示例创建失败");
+      this.toast(result?.error || "示例打开失败");
       return;
     }
-    this.loadProject(sample, result.path, { fit: true, autosave: false });
-    await this.refreshBoards();
-    this.setTool("select", false);
+    const loaded = await this.bridge.loadBoard(result.path);
+    if (!loaded?.ok) {
+      this.toast(loaded?.error || "示例打开失败");
+      return;
+    }
+    try {
+      this.loadProject(deserializeProject(loaded.content), result.path, { fit: true, autosave: false });
+      await this.refreshBoards();
+      this.setTool("select", false);
+    } catch (error) {
+      this.toast(error.message || "示例内容损坏");
+    }
   }
 
   // ------------------------------------------------------------- steps
@@ -1005,7 +1022,6 @@ export class App {
       const add = event.target.closest("[data-add]")?.dataset.add;
       if (add) this.addObject(add);
     });
-    document.getElementById("empty-sample").addEventListener("click", () => this.loadSample());
     document.querySelectorAll("#empty-state [data-add]").forEach((button) => {
       button.addEventListener("click", () => this.addObject(button.dataset.add));
     });

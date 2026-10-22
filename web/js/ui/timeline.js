@@ -11,11 +11,9 @@ export class Timeline {
     this.prev = document.getElementById("btn-prev-step");
     this.next = document.getElementById("btn-next-step");
     this.diffToggle = document.getElementById("toggle-diff");
-    this.recordButton = document.getElementById("btn-timeline-record");
     this.list.addEventListener("click", (event) => this.onClick(event));
     this.list.addEventListener("keydown", (event) => this.onKeyDown(event));
     this.liveStep.addEventListener("click", () => this.app.goLive());
-    this.recordButton.addEventListener("click", () => this.app.recordStep());
     this.prev.addEventListener("click", () => this.app.goPrevious());
     this.next.addEventListener("click", () => this.app.goNext());
     this.diffToggle.addEventListener("change", () => {
@@ -47,8 +45,6 @@ export class Timeline {
         ${liveDiff.count ? `<span class="step-change">${liveDiff.count}</span>` : ""}
       </div>`;
     this.list.innerHTML = parts.join("");
-    this.recordButton.disabled = Boolean(app.ui.viewStepId);
-    this.recordButton.title = app.ui.viewStepId ? "回到当前后才能记录" : "记录当前状态 (Ctrl+Enter)";
     this.prev.disabled = app.ui.viewStepId ? stepIndex(app.project, app.ui.viewStepId) <= 0 : steps.length === 0;
     this.next.disabled = !app.ui.viewStepId;
     this.diffToggle.checked = app.ui.diffEnabled;

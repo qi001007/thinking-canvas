@@ -58,9 +58,12 @@
             <button id="board-search-clear" class="search-clear" type="button" title="清除搜索" aria-label="清除搜索" hidden>×</button>
           </div>
           <div id="board-list" class="board-list" aria-label="画板列表"></div>
+          <div class="sample-board" id="sample-board" role="button" tabindex="0" title="打开示例画板">
+            <span class="sample-badge">示例</span>
+            <span class="sample-title" id="sample-title">冒泡排序 · 第一轮</span>
+          </div>
           <div class="board-foot">
             <button id="btn-boards-folder" class="board-foot-btn" title="打开画板文件夹">boards/</button>
-            <button id="btn-sample" class="board-foot-btn" title="新建示例画板">示例</button>
           </div>
         </div>
       </aside>
@@ -112,7 +115,6 @@
               <p>放数据、拖指针，记录每一步。</p>
               <div class="empty-actions">
                 <button class="primary-btn" data-add="array">放一个数组</button>
-                <button class="text-btn" id="empty-sample">示例</button>
               </div>
             </div>
           </div>
@@ -153,7 +155,6 @@
         </div>
         <div class="step-list" id="step-list"></div>
         <div id="live-step" class="live-step"></div>
-        <button id="btn-timeline-record" class="step-add" title="记录当前状态 (Ctrl+Enter)">＋ 记录一步</button>
         <div class="timeline-right">
           <label class="diff-toggle" title="高亮与上一步相比发生变化的格子">
             <input id="toggle-diff" type="checkbox" checked>

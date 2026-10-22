@@ -1237,7 +1237,6 @@ export class Canvas {
     this.app.showContextMenu(event.clientX, event.clientY, [
       { label: "适应画布", action: () => this.fit() },
       { label: "记录一步", action: () => this.app.recordStep() },
-      { label: "打开示例", action: () => this.app.loadSample() },
     ]);
   }
 }

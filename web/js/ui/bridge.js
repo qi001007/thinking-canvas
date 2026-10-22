@@ -6,6 +6,7 @@ const RECENT_KEY = "thinking-canvas.recent.v1";
 const BOARDS_KEY = "thinking-canvas.boards.v2";
 const DELETED_KEY = "thinking-canvas.boards.deleted.v2";
 const UI_KEY = "thinking-canvas.ui.v1";
+const SAMPLE_PATH = "local:board-sample";
 
 function pywebviewApiReady() {
   const api = window.pywebview?.api;
@@ -88,6 +89,10 @@ class DesktopBridge {
 
   async createBoard(content, title) {
     return window.pywebview.api.create_board(content, title);
+  }
+
+  async ensureSampleBoard(content, title) {
+    return window.pywebview.api.ensure_sample_board(content, title);
   }
 
   async saveBoard(path, content) {
@@ -229,6 +234,7 @@ class BrowserBridge {
       mtime: entry.mtime,
       size: entry.content.length,
       invalid: false,
+      sample: entry.path === SAMPLE_PATH,
     };
   }
 
@@ -265,6 +271,29 @@ class BrowserBridge {
     return { ok: true, path: entry.path, item: this.boardItem(entry) };
   }
 
+  async ensureSampleBoard(content, title) {
+    const store = this.boardStore();
+    if (store[SAMPLE_PATH]) {
+      return { ok: true, path: SAMPLE_PATH, created: false, item: this.boardItem(store[SAMPLE_PATH]) };
+    }
+    let parsed = {};
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return { ok: false, error: "示例内容不是有效 JSON。" };
+    }
+    const entry = {
+      path: SAMPLE_PATH,
+      title: parsed.title || title || "示例画板",
+      content,
+      updatedAt: parsed.updatedAt || new Date().toISOString(),
+      mtime: Date.now(),
+    };
+    store[SAMPLE_PATH] = entry;
+    this.writeBoardStore(store);
+    return { ok: true, path: SAMPLE_PATH, created: true, item: this.boardItem(entry) };
+  }
+
   async saveBoard(path, content) {
     const store = this.boardStore();
     if (!store[path]) return { ok: false, error: "画板不存在。" };
@@ -289,6 +318,7 @@ class BrowserBridge {
   }
 
   async deleteBoard(path) {
+    if (path === SAMPLE_PATH) return { ok: false, error: "示例画板不能删除。" };
     const store = this.boardStore();
     if (!store[path]) return { ok: false, error: "画板不存在。" };
     let deleted = [];

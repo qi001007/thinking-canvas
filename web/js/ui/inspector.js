@@ -55,11 +55,7 @@ export class Inspector {
           <tr><td>未记录</td><td>${liveDiff.count ? `${liveDiff.count} 处` : "无"}</td></tr>
         </table>
       </div>
-      ${liveDiff.count ? `<div class="insp-section"><div class="diff-list">${liveDiff.summary.map((line) => `<div class="diff-line"><span class="diff-dot"></span><span>${escapeHtml(line)}</span></div>`).join("")}</div></div>` : ""}
-      <div class="insp-footer">
-        <button class="small-btn" data-action="sample">示例</button>
-        <button class="small-btn" data-action="help">快捷键</button>
-      </div>`;
+      ${liveDiff.count ? `<div class="insp-section"><div class="diff-list">${liveDiff.summary.map((line) => `<div class="diff-line"><span class="diff-dot"></span><span>${escapeHtml(line)}</span></div>`).join("")}</div></div>` : ""}`;
   }
 
   renderStep() {
@@ -323,7 +319,6 @@ export class Inspector {
     const objectId = event.target.closest("[data-object-id]")?.dataset.objectId;
     const app = this.app;
     if (action === "help") app.openHelp();
-    else if (action === "sample") app.loadSample();
     else if (action === "go-live") app.goLive();
     else if (action === "delete-step") app.deleteStep(event.target.closest("[data-step-id]")?.dataset.stepId);
     else if (action === "duplicate") app.duplicateSelection();
