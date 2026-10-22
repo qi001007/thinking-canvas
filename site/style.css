@@ -64,41 +64,7 @@ a {
 .brand-mark {
   width: 26px;
   height: 26px;
-  border-radius: 8px;
-  background: var(--accent);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.brand-mark span {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid #fff;
-  border-radius: 2px;
-  position: relative;
-}
-
-.brand-mark span::before,
-.brand-mark span::after {
-  content: "";
-  position: absolute;
-  background: #fff;
-}
-
-.brand-mark span::before {
-  left: 4px;
-  right: 4px;
-  top: 4px;
-  height: 1.5px;
-}
-
-.brand-mark span::after {
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: 1.5px;
+  background: url("brand.png") center / contain no-repeat;
 }
 
 .nav nav {

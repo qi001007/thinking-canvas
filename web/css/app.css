@@ -98,33 +98,7 @@ button {
 .brand-mark {
   width: 25px;
   height: 25px;
-  border-radius: 7px;
-  background: var(--accent);
-  position: relative;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
-}
-
-.brand-mark::before,
-.brand-mark::after {
-  content: "";
-  position: absolute;
-  background: #fff;
-  border-radius: 1px;
-}
-
-.brand-mark::before {
-  width: 11px;
-  height: 2px;
-  left: 7px;
-  top: 8px;
-  box-shadow: 0 6px 0 #fff;
-}
-
-.brand-mark::after {
-  width: 2px;
-  height: 11px;
-  left: 11px;
-  top: 7px;
+  background: url("../brand.png") center / contain no-repeat;
 }
 
 .brand-name {

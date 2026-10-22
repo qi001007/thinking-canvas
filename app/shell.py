@@ -38,12 +38,12 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from app.api import FileApi
     from app.instance import clear_state, read_state, write_state
-    from app.paths import app_data_dir, web_dir
+    from app.paths import app_data_dir, resource_dir, web_dir
     from app.win32 import child_pids, find_window, focus_window, pid_alive, process_image, terminate_process, window_pid
 else:
     from .api import FileApi
     from .instance import clear_state, read_state, write_state
-    from .paths import app_data_dir, web_dir
+    from .paths import app_data_dir, resource_dir, web_dir
     from .win32 import child_pids, find_window, focus_window, pid_alive, process_image, terminate_process, window_pid
 
 WINDOW_TITLE = "Thinking Canvas"
@@ -61,6 +61,17 @@ def _startup_log(message: str) -> None:
             path.replace(folder / "startup.log.1")
         with path.open("a", encoding="utf-8") as stream:
             stream.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} pid={os.getpid()} {message}\n")
+    except Exception:
+        pass
+
+
+def _set_app_user_model_id() -> None:
+    if os.name != "nt":
+        return
+    try:
+        shell32 = ctypes.windll.shell32
+        shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [ctypes.c_wchar_p]
+        shell32.SetCurrentProcessExplicitAppUserModelID("ThinkingCanvas.ThinkingCanvas")
     except Exception:
         pass
 
@@ -322,6 +333,7 @@ def main(argv: list[str] | None = None) -> int:
     smoke = "--smoke" in argv
     debug = "--dev" in argv
     _startup_log(f"main start argv={argv} frozen={getattr(sys, 'frozen', False)}")
+    _set_app_user_model_id()
     recovered = False
     if not smoke:
         start, recovered = _ensure_single_instance()
@@ -379,6 +391,8 @@ def main(argv: list[str] | None = None) -> int:
         profile = _profile_dir("webview-recovery", fresh=True)
     else:
         profile = _profile_dir("webview")
+    icon_file = resource_dir() / "app" / "app.ico"
+    icon = str(icon_file) if icon_file.exists() else None
     window = webview.create_window(
         WINDOW_TITLE,
         url=url,
@@ -437,6 +451,7 @@ def main(argv: list[str] | None = None) -> int:
                 debug=False,
                 private_mode=True,
                 storage_path=profile,
+                icon=icon,
             )
             return 0
         webview.start(
@@ -444,6 +459,7 @@ def main(argv: list[str] | None = None) -> int:
             debug=debug,
             private_mode=True,
             storage_path=profile,
+            icon=icon,
         )
         clear_state(os.getpid())
         _startup_log("webview.start returned")

@@ -33,6 +33,8 @@ def main() -> int:
         str(ROOT / "app" / "app.ico"),
         "--add-data",
         f"{ROOT / 'web'};web",
+        "--add-data",
+        f"{ROOT / 'app' / 'app.ico'};app",
         *optional_binary(bin_dir / "libcrypto-1_1-x64.dll"),
         *optional_binary(bin_dir / "libssl-1_1-x64.dll"),
         *optional_binary(bin_dir / "ffi.dll"),

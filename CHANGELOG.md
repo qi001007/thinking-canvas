@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.9 · 2026-10-23
+
+- Unify the brand icon: use `app/app.ico` for the exe/window/taskbar, and a trimmed `brand.png` from the same artwork for the in-app header and project site; set an AppUserModelID.
+- Add an asset-path smoke assertion for the header mark.
+- Regenerate hero/empty screenshots and the site hero with the unified mark.
+
 ## 0.3.8 · 2026-10-23
 
 - Add a runtime heartbeat and single-instance health hand-off. A second launch now detects a stale/black WebView2 window, terminates it, and opens a clean window instead of only focusing the dead one.
